@@ -1,0 +1,6 @@
+[package]
+name = "rust-geo-tree"
+version = "0.1.0"
+authors = ["Bulat Fattahov <bfattahov@evolutiongaming.com>"]
+
+[dependencies]
