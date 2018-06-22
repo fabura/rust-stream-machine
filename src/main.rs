@@ -1,10 +1,10 @@
 //extern crate geotree;
+#[macro_use]
+extern crate lazy_static;
 
-mod geotree;
-//use geotree::geotree::*;
-//use geotree::geotree::GeoTreeNode;
+mod stream;
+use stream::stream_machine::*;
 
 fn main() {
-//   let node = IntermediateNode::new();
-//    println!("{}", node.to_string())
+    run_rule();
 }
