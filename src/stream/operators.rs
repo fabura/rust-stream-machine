@@ -3,156 +3,132 @@ use std::marker::PhantomData;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Sub};
 use stream::stream_machine::*;
 
-pub trait Binary<Event, State, T, RightT> {
-    fn combine<R, RightState, T3, F: Fn(T, RightT) -> T3 + 'static>(
+pub trait Binary<E, S1, T1, T2> {
+    fn combine<R, S2, T3, F: Fn(T1, T2) -> T3 + 'static>(
         self,
         rhs: R,
         f: F,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    ) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>;
+        Self: StreamPattern<E, S1, T1>;
 
-    fn plus<R, RightState, T3>(
-        self,
-        rhs: R,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    fn plus<R, S2, T3>(self, rhs: R) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        T: Add<RightT, Output = T3>,
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        T1: Add<T2, Output = T3>,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         self.combine(rhs, |t1, t2| t1 + t2)
     }
 
-    fn sub<R, RightState, T3>(
-        self,
-        rhs: R,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    fn sub<R, S2, T3>(self, rhs: R) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        T: Sub<RightT, Output = T3>,
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        T1: Sub<T2, Output = T3>,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         self.combine(rhs, |t1, t2| t1 - t2)
     }
 
-    fn mul<R, RightState, T3>(
-        self,
-        rhs: R,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    fn mul<R, S2, T3>(self, rhs: R) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        T: Mul<RightT, Output = T3>,
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        T1: Mul<T2, Output = T3>,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         self.combine(rhs, |t1, t2| t1 * t2)
     }
 
-    fn div<R, RightState, T3>(
-        self,
-        rhs: R,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    fn div<R, S2, T3>(self, rhs: R) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        T: Div<RightT, Output = T3>,
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        T1: Div<T2, Output = T3>,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         self.combine(rhs, |t1, t2| t1 / t2)
     }
 
-    fn rem<R, RightState, T3>(
-        self,
-        rhs: R,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    fn rem<R, S2, T3>(self, rhs: R) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        T: Rem<RightT, Output = T3>,
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        T1: Rem<T2, Output = T3>,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         self.combine(rhs, |t1, t2| t1 % t2)
     }
 
-    fn and<R, RightState, T3>(
-        self,
-        rhs: R,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    fn and<R, S2, T3>(self, rhs: R) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        T: BitAnd<RightT, Output = T3>,
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        T1: BitAnd<T2, Output = T3>,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         self.combine(rhs, |t1, t2| t1 & t2)
     }
 
-    fn or<R, RightState, T3>(
-        self,
-        rhs: R,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    fn or<R, S2, T3>(self, rhs: R) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        T: BitOr<RightT, Output = T3>,
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        T1: BitOr<T2, Output = T3>,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         self.combine(rhs, |t1, t2| t1 | t2)
     }
 
-    fn xor<R, RightState, T3>(
-        self,
-        rhs: R,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    fn xor<R, S2, T3>(self, rhs: R) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        T: BitXor<RightT, Output = T3>,
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        T1: BitXor<T2, Output = T3>,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         self.combine(rhs, |t1, t2| t1 ^ t2)
     }
 }
 
-impl<Event, State, T, RightT, L> Binary<Event, State, T, RightT> for L
+impl<E, S1, T1, T2, L> Binary<E, S1, T1, T2> for L
 where
-    L: StreamPattern<Event, State, T>,
-    State: Default,
+    L: StreamPattern<E, S1, T1>,
+    S1: Default,
 {
-    fn combine<R, RightState, T3, F: Fn(T, RightT) -> T3 + 'static>(
+    fn combine<R, S2, T3, F: Fn(T1, T2) -> T3 + 'static>(
         self,
         rhs: R,
         f: F,
-    ) -> BinaryPattern<Event, State, RightState, T, RightT, T3, Self, R>
+    ) -> BinaryPattern<E, S1, S2, T1, T2, T3, Self, R>
     where
-        R: StreamPattern<Event, RightState, RightT>,
-        State: Default,
-        RightState: Default,
+        R: StreamPattern<E, S2, T2>,
+        S1: Default,
+        S2: Default,
         Self: Sized,
-        Self: StreamPattern<Event, State, T>,
+        Self: StreamPattern<E, S1, T1>,
     {
         BinaryPattern {
             left: self,
@@ -167,32 +143,32 @@ where
     }
 }
 
-pub struct BinaryPattern<Event, State1, State2, T1, T2, T3, A, B>
+pub struct BinaryPattern<E, State1, S2, T1, T2, T3, A, B>
 where
-    A: StreamPattern<Event, State1, T1>,
-    B: StreamPattern<Event, State2, T2>,
+    A: StreamPattern<E, State1, T1>,
+    B: StreamPattern<E, S2, T2>,
     State1: Default,
-    State2: Default,
+    S2: Default,
 {
     left: A,
     right: B,
     f: Box<Fn(T1, T2) -> T3>,
-    e: PhantomData<Event>,
+    e: PhantomData<E>,
     st1: PhantomData<State1>,
-    st2: PhantomData<State2>,
+    st2: PhantomData<S2>,
     t1: PhantomData<T1>,
     t2: PhantomData<T2>,
 }
 
-impl<Event, State1, State2, T1, T2, T3, A, B> StreamPattern<Event, (State1, State2), T3>
-    for BinaryPattern<Event, State1, State2, T1, T2, T3, A, B>
+impl<E, State1, S2, T1, T2, T3, A, B> StreamPattern<E, (State1, S2), T3>
+    for BinaryPattern<E, State1, S2, T1, T2, T3, A, B>
 where
     State1: Default,
-    State2: Default,
-    A: StreamPattern<Event, State1, T1>,
-    B: StreamPattern<Event, State2, T2>,
+    S2: Default,
+    A: StreamPattern<E, State1, T1>,
+    B: StreamPattern<E, S2, T2>,
 {
-    fn apply(&self, event: &Event, state: &mut (State1, State2)) -> ParseResult<T3> {
+    fn apply(&self, event: &E, state: &mut (State1, S2)) -> ParseResult<T3> {
         let (state_l, state_r) = state;
         let result_l = self.left.apply(event, state_l);
         let result_r = self.right.apply(event, state_r);

@@ -149,7 +149,7 @@ impl TEvent {
 
 pub fn run_rule() -> () {
     let rule = FunctionParser::new(|e: &TEvent| -> f64 { e.v });
-    let rule1 = FunctionParser::new(|e: &TEvent| -> bool { e.v > 12.0});
+    let rule1 = FunctionParser::new(|e: &TEvent| -> bool { e.v > 12.0 });
     let rule2 = FunctionParser::new(|e: &TEvent| -> bool { e.time < 100 });
 
     let rule3 = rule1.and(rule2);
