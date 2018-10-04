@@ -1,6 +1,7 @@
-//extern crate geotree;
 #[macro_use]
 extern crate lazy_static;
+
+extern crate time;
 
 mod stream;
 use stream::stream_machine::*;
