@@ -14,12 +14,12 @@ pub struct SimpleMachineMapper<Event: WithIndex, State: Default, T, Out> {
 
 }
 
-impl<Event: WithIndex, State: Default, Out, T> SimpleMachineMapper<Event, State, T, Out> {
+impl<Event: WithIndex, State: Default, Out, T:Clone> SimpleMachineMapper<Event, State, T, Out> {
     pub fn run(
         &self,
         state: &mut State,
         events: &Vec<Event>,
-    ) -> (Vec<Out>) {
+    ) -> Vec<Out> {
         let _changed = self.rule.apply(events, &mut PQueue::default(), state);
 
         // if changed {
