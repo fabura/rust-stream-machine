@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
-use stream::pattern::ParseResult;
-use stream::pattern::Pattern;
+use crate::stream::pattern::*;
 
 pub struct MapPattern<E, S, T1, T2, A, F>
     where

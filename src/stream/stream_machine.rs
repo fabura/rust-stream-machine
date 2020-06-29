@@ -2,9 +2,9 @@ use std::borrow::BorrowMut;
 use std::boxed::Box;
 use std::iter::Iterator;
 use std::rc::Rc;
-use stream::operators::Binary;
-use stream::functions::*;
-use stream::pattern::*;
+use crate::stream::operators::Binary;
+use crate::stream::functions::*;
+use crate::stream::pattern::*;
 
 pub struct ConstantParser<T: 'static>(T);
 
@@ -21,7 +21,7 @@ impl<Event, T: Clone> Pattern<Event, NoState, T> for ConstantParser<T> {
 }
 
 
-type BoxedPattern<Event, State, Out> = Box<Rc<Pattern<Event, State, Out>>>;
+type BoxedPattern<Event, State, Out> = Box<Rc<dyn Pattern<Event, State, Out>>>;
 
 struct SimpleMachineMapper<Event, State: Default, Out> {
     rule: BoxedPattern<Event, State, Out>,

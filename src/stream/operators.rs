@@ -1,7 +1,7 @@
 use std::cmp::PartialOrd;
 use std::marker::PhantomData;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Sub};
-use stream::pattern::*;
+use crate::stream::pattern::*;
 
 pub trait Binary<E, S1, T1, T2> {
     fn combine<R, S2, T3, F: Fn(T1, T2) -> T3 + 'static>(

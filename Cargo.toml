@@ -2,6 +2,7 @@
 name = "rust-geo-tree"
 version = "0.1.0"
 authors = ["Bulat Fattahov <bfattahov@evolutiongaming.com>"]
+edition = "2018"
 
 [dependencies]
 lazy_static = "1.0.0"

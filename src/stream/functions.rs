@@ -1,6 +1,6 @@
-use stream::pattern::*;
+use crate::stream::pattern::*;
 
-type BoxedFn<Event, T> = Box<Fn(&Event) -> T>;
+type BoxedFn<Event, T> = Box<dyn Fn(&Event) -> T>;
 
 pub struct FunctionPattern<Event, T: 'static> {
     func: BoxedFn<Event, T>,

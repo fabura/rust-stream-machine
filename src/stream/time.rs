@@ -1,6 +1,6 @@
 use time::Timespec;
 use time::Duration;
-use stream::pattern::*;
+use crate::stream::pattern::*;
 use std::marker::PhantomData;
 
 pub trait TimeExtractor<E> {
@@ -56,17 +56,18 @@ for AndThenPattern<E, S1, S2, T1, T2, A, B>
 
         match opt {
             None => {
-                let r = self.first.apply(event, s1)
+                let r = self.first.apply(event, s1);
                 let r_final = match r {
                     ParseResult::Failure { message } => ParseResult::Failure { message },
                     ParseResult::Stay => ParseResult::Stay,
                     ParseResult::Success(t1) => {
-                        r
-
+                        // ParseResult::Success(t1)
+ParseResult::Stay
                     }
-                }
+                };
+                r_final
             }
-            Some() =>,
+            Some(_) => ParseResult::Stay , // todo fix it later
         }
     }
 }
