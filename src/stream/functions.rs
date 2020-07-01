@@ -8,8 +8,8 @@ pub struct FunctionPattern<Event, T: 'static> {
 
 impl<Event, T> FunctionPattern<Event, T> {
     pub fn new<C>(f: C) -> FunctionPattern<Event, T>
-        where
-            C: Fn(&Event) -> T + 'static,
+    where
+        C: Fn(&Event) -> T + 'static,
     {
         FunctionPattern { func: Box::new(f) }
     }

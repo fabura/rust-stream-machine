@@ -6,9 +6,9 @@ extern crate time;
 mod stream;
 mod tsp;
 
-use crate::tsp::tsp::{Chunker};
-use crate::tsp::pattern::{WithIndex, PatternResult};
+use crate::tsp::pattern::{PatternResult, WithIndex};
 use crate::tsp::patterns::ConstantPattern;
+use crate::tsp::tsp::Chunker;
 
 #[derive(Debug)]
 struct TestEvent {
@@ -28,9 +28,7 @@ impl WithIndex for &TestEvent {
     }
 }
 
-
 fn main() {
-
     let ints = &[
         TestEvent::new(1, 34),
         TestEvent::new(2, 35),
@@ -39,17 +37,15 @@ fn main() {
         TestEvent::new(5, 38),
     ];
 
-    let state_machine = tsp::tsp::SimpleMachineMapper::new(ConstantPattern::new(PatternResult::Success(3))
+    let state_machine =
+        tsp::tsp::SimpleMachineMapper::new(ConstantPattern::new(PatternResult::Success(3)));
 
-    );
-
-    let iter = state_machine.run(ints.iter().into_iter(), 1);
+    let iter = state_machine.run(ints.iter().into_iter(), 10);
     {
         println!("test");
         for x in iter {
-        // for x in Chunker::new( ints.iter().into_iter(), 2) {
             println!("{:?}", x)
-        };
+        }
     }
-//     run_rule();
+    //     run_rule();
 }

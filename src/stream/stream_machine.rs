@@ -1,10 +1,10 @@
+use crate::stream::functions::*;
+use crate::stream::operators::Binary;
+use crate::stream::pattern::*;
 use std::borrow::BorrowMut;
 use std::boxed::Box;
 use std::iter::Iterator;
 use std::rc::Rc;
-use crate::stream::operators::Binary;
-use crate::stream::functions::*;
-use crate::stream::pattern::*;
 
 pub struct ConstantParser<T: 'static>(T);
 
@@ -19,7 +19,6 @@ impl<Event, T: Clone> Pattern<Event, NoState, T> for ConstantParser<T> {
         ParseResult::Success(self.0.clone())
     }
 }
-
 
 type BoxedPattern<Event, State, Out> = Box<Rc<dyn Pattern<Event, State, Out>>>;
 
@@ -68,7 +67,7 @@ impl TEvent {
 
 pub fn run_rule() -> () {
     let v = FunctionPattern::new(|e: &TEvent| -> f64 { e.v });
-    let time = FunctionPattern::new(|e: &TEvent| -> f64 { e.time as f64});
+    let time = FunctionPattern::new(|e: &TEvent| -> f64 { e.time as f64 });
     let _rule1 = FunctionPattern::new(|e: &TEvent| -> bool { e.v > 12.0 });
     let _rule2 = FunctionPattern::new(|e: &TEvent| -> bool { e.time < 100 });
 

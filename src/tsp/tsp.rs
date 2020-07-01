@@ -2,13 +2,12 @@ use std::collections::VecDeque;
 
 // use itertools::{Itertools, IntoChunks, Chunks};
 
-
 use crate::tsp::pattern::*;
 use std::marker::PhantomData;
 
 // type BoxedPattern<Event, State,T> = Box<dyn Pattern<Event, State,T, W=u64>>;
 
-// pub trait Counter<'a, Event, T> {
+// pub trait Counter< Event, T> {
 //     fn extract<'b>(&'a self, events: &'b Vec<Event>) -> T;
 // }
 
@@ -22,43 +21,54 @@ use std::marker::PhantomData;
 //     }
 // }
 
-// impl<'a, Event> Counter<'a, Event, i32> for EmptyCounter<Event> {
+// impl< Event> Counter< Event, i32> for EmptyCounter<Event> {
 //     fn extract<'b>(&'a self, events: &'b Vec<Event>) -> i32 {
 //         -1
 //     }
 // }
 
-pub struct SimpleMachineMapper<P> where P: Pattern {
+pub struct SimpleMachineMapper<P>
+where
+    P: Pattern,
+{
     rule: P,
-    // counter: Box<dyn Counter<'a, Event>>,
+    // counter: Box<dyn Counter< Event>>,
 }
 
-impl<P> SimpleMachineMapper<P> where P: Pattern {
-    pub fn new(rule: P/*, counter: Box<dyn Counter<'a, Event>>*/) -> SimpleMachineMapper<P> {
+impl<P> SimpleMachineMapper<P>
+where
+    P: Pattern,
+{
+    pub fn new(rule: P /*, counter: Box<dyn Counter< Event>>*/) -> SimpleMachineMapper<P> {
         SimpleMachineMapper { rule }
     }
 
-    pub fn run<'a, J>(mut self, events_iter: J, chunks_size: usize) -> TSPIter<'a, P, J>
-        where J: Iterator<Item=P::Event>, J: 'a
+    pub fn run<J>(mut self, events_iter: J, chunks_size: usize) -> TSPIter<P, J>
+    where
+        J: Iterator<Item = P::Event>,
     {
         TSPIter::new(self, Chunker::new(events_iter, chunks_size))
     }
 }
 
-pub struct TSPIter<'a, P, J> where
-    J: Iterator<Item=P::Event>,
+pub struct TSPIter<P, J>
+where
+    J: Iterator<Item = P::Event>,
     P: Pattern,
 {
     mapper: SimpleMachineMapper<P>,
-    chunker: Chunker<'a, J>,
+    chunker: Chunker<J>,
     //todo Maybe need to add something more complicated here
     results_queue: PQueue<P::T>,
     state: P::State,
 }
 
-impl<'a, P, J> TSPIter<'a, P, J> where J: Iterator<Item=P::Event>, P: Pattern
+impl<P, J> TSPIter<P, J>
+where
+    J: Iterator<Item = P::Event>,
+    P: Pattern,
 {
-    pub fn new(mapper: SimpleMachineMapper<P>, chunker: Chunker<'a, J>) -> TSPIter<'a, P, J> {
+    pub fn new(mapper: SimpleMachineMapper<P>, chunker: Chunker<J>) -> TSPIter<P, J> {
         TSPIter {
             mapper,
             chunker,
@@ -68,8 +78,10 @@ impl<'a, P, J> TSPIter<'a, P, J> where J: Iterator<Item=P::Event>, P: Pattern
     }
 }
 
-
-impl<'a, P, J> Iterator for TSPIter<'a, P, J> where P: Pattern, J: Iterator<Item=P::Event>
+impl<P, J> Iterator for TSPIter<P, J>
+where
+    P: Pattern,
+    J: Iterator<Item = P::Event>,
 {
     type Item = IdxValue<P::T>;
 
@@ -78,25 +90,39 @@ impl<'a, P, J> Iterator for TSPIter<'a, P, J> where P: Pattern, J: Iterator<Item
         loop {
             match self.results_queue.dequeue_option() {
                 v @ Some(_) => return v,
-                None => { self.mapper.rule.apply(&self.chunker.next()?, &mut self.results_queue, &mut self.state); }
+                None => {
+                    self.mapper.rule.apply(
+                        &self.chunker.next()?,
+                        &mut self.results_queue,
+                        &mut self.state,
+                    );
+                }
             }
         }
     }
 }
 
-pub struct Chunker<'a, I> where I: 'a {
+pub struct Chunker<I> {
     iter: I,
     chunks_size: usize,
-    pf: PhantomData<&'a i32>,
 }
 
-impl<'a, I> Chunker<'a, I> where I: Iterator, I: 'a {
-    pub(crate) fn new(iter: I, chunks_size: usize) -> Chunker<'a, I> {
-        Chunker { iter, chunks_size, pf: PhantomData }
+impl<I> Chunker<I>
+where
+    I: Iterator,
+{
+    pub(crate) fn new(iter: I, chunks_size: usize) -> Chunker<I> {
+        Chunker {
+            iter,
+            chunks_size,
+        }
     }
 }
 
-impl<'a, I> Iterator for Chunker<'a, I> where I: Iterator, I: 'a {
+impl<I> Iterator for Chunker<I>
+where
+    I: Iterator,
+{
     type Item = Vec<I::Item>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -119,7 +145,7 @@ impl<'a, I> Iterator for Chunker<'a, I> where I: Iterator, I: 'a {
     fn size_hint(&self) -> (usize, Option<usize>) {
         match self.iter.size_hint() {
             (lower, Some(upper)) => (lower, Some(upper / self.chunks_size)),
-            h @ (_, _) => h
+            h @ (_, _) => h,
         }
     }
 }

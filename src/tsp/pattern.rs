@@ -1,11 +1,15 @@
 use std::collections::VecDeque;
 
-pub trait Pattern
-{
+pub trait Pattern {
     type State: Default;
     type Event: WithIndex;
     type T: Clone;
-    fn apply(&self, event: &Vec<Self::Event>, queue: &mut PQueue<Self::T>, state: &mut Self::State) -> bool;
+    fn apply(
+        &self,
+        event: &Vec<Self::Event>,
+        queue: &mut PQueue<Self::T>,
+        state: &mut Self::State,
+    ) -> bool;
 
     type W: Width;
 
@@ -23,7 +27,10 @@ pub trait WithIndex {
 }
 
 #[derive(Debug, Clone)]
-pub enum PatternResult<T: Sized> where T: std::clone::Clone {
+pub enum PatternResult<T: Sized>
+where
+    T: std::clone::Clone,
+{
     Failure,
     Success(T), //todo make result fixed size
 }
@@ -43,13 +50,13 @@ impl<T: Clone> IdxValue<T> {
 
 #[derive(Debug)]
 pub struct PQueue<T: Clone> {
-    queue: std::collections::VecDeque<IdxValue<T>>
+    queue: std::collections::VecDeque<IdxValue<T>>,
 }
 
 impl<T: Clone> Default for PQueue<T> {
     fn default() -> Self {
         PQueue {
-            queue: VecDeque::default()
+            queue: VecDeque::default(),
         }
     }
 }
@@ -72,7 +79,7 @@ impl<T: Clone> PQueue<T> {
     //  fn behead_option(&mut self)-> Option<&PQueue<T>>{
     //      self.queue.pop_front().map(|| self)
     //  }
-    pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item=IdxValue<T>>) -> &mut Self {
+    pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item = IdxValue<T>>) -> &mut Self {
         idx_values.for_each(|x| self.queue.push_back(x));
         self
     }

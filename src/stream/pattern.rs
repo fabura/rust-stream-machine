@@ -15,8 +15,8 @@ impl<T> ParseResult<T> {
     }
 
     pub fn map<T2, F>(self, f: F) -> ParseResult<T2>
-        where
-            F: FnOnce(T) -> T2,
+    where
+        F: FnOnce(T) -> T2,
     {
         match self {
             ParseResult::Success(t) => ParseResult::Success(f(t)),
@@ -26,8 +26,8 @@ impl<T> ParseResult<T> {
     }
 
     pub fn flat_map<T2, F>(self, f: F) -> ParseResult<T2>
-        where
-            F: FnOnce(T) -> ParseResult<T2>,
+    where
+        F: FnOnce(T) -> ParseResult<T2>,
     {
         match self {
             ParseResult::Success(t) => f(t),
@@ -37,8 +37,7 @@ impl<T> ParseResult<T> {
     }
 }
 
-pub trait Pattern<Event, State: Default, T>
-{
+pub trait Pattern<Event, State: Default, T> {
     fn apply(&self, event: &Event, state: &mut State) -> ParseResult<T>;
 }
 
