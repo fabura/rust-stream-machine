@@ -1,11 +1,11 @@
 use std::collections::VecDeque;
 
-pub trait Pattern<Event, State, T> where
-    State: Default,
-    Event: WithIndex,
-    T: Clone
+pub trait Pattern
 {
-    fn apply(&self, event: &Vec<Event>, queue: &mut PQueue<T>, state: &mut State) -> bool;
+    type State: Default;
+    type Event: WithIndex;
+    type T: Clone;
+    fn apply(&self, event: &Vec<Self::Event>, queue: &mut PQueue<Self::T>, state: &mut Self::State) -> bool;
 
     type W: Width;
 
@@ -29,7 +29,7 @@ pub enum PatternResult<T: Sized> where T: std::clone::Clone {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct IdxValue<T: Clone> {
+pub struct IdxValue<T: Clone> {
     start: Idx,
     end: Idx,
     result: PatternResult<T>,
@@ -72,7 +72,7 @@ impl<T: Clone> PQueue<T> {
     //  fn behead_option(&mut self)-> Option<&PQueue<T>>{
     //      self.queue.pop_front().map(|| self)
     //  }
-    pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item=IdxValue<T>>) -> (&mut Self) {
+    pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item=IdxValue<T>>) -> &mut Self {
         idx_values.for_each(|x| self.queue.push_back(x));
         self
     }
