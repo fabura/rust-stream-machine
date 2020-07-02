@@ -4,12 +4,7 @@ pub trait Pattern {
     type State: Default;
     type Event: WithIndex;
     type T: Clone;
-    fn apply(
-        &self,
-        event: &Vec<Self::Event>,
-        queue: &mut PQueue<Self::T>,
-        state: &mut Self::State,
-    ) -> bool;
+    fn apply(&self, event: &Vec<Self::Event>, queue: &mut PQueue<Self::T>, state: &mut Self::State);
 
     type W: Width;
 
@@ -29,17 +24,30 @@ pub trait WithIndex {
 #[derive(Debug, Clone)]
 pub enum PatternResult<T: Sized>
 where
-    T: std::clone::Clone,
+    T: Clone,
 {
     Failure,
     Success(T), //todo make result fixed size
 }
 
+impl<T> PartialEq for PatternResult<T>
+where
+    T: PartialEq + Clone,
+{
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (PatternResult::Failure, PatternResult::Failure) => true,
+            (PatternResult::Success(a), PatternResult::Success(b)) if a == b => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct IdxValue<T: Clone> {
-    start: Idx,
-    end: Idx,
-    result: PatternResult<T>,
+    pub start: Idx,
+    pub end: Idx,
+    pub result: PatternResult<T>,
 }
 
 impl<T: Clone> IdxValue<T> {
@@ -80,7 +88,11 @@ impl<T: Clone> PQueue<T> {
     //      self.queue.pop_front().map(|| self)
     //  }
     pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item = IdxValue<T>>) -> &mut Self {
-        idx_values.for_each(|x| self.queue.push_back(x));
+        self.queue.extend(idx_values);
+        self
+    }
+    pub(crate) fn enqueue_one(&mut self, idx_value: IdxValue<T>) -> &mut Self {
+        self.queue.push_back(idx_value);
         self
     }
     //  fn rewind_to(newStart: Idx): PQueue[T]

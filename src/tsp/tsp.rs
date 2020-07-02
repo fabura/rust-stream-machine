@@ -5,8 +5,6 @@ use std::collections::VecDeque;
 use crate::tsp::pattern::*;
 use std::marker::PhantomData;
 
-// type BoxedPattern<Event, State,T> = Box<dyn Pattern<Event, State,T, W=u64>>;
-
 // pub trait Counter< Event, T> {
 //     fn extract<'b>(&'a self, events: &'b Vec<Event>) -> T;
 // }
@@ -112,10 +110,7 @@ where
     I: Iterator,
 {
     pub(crate) fn new(iter: I, chunks_size: usize) -> Chunker<I> {
-        Chunker {
-            iter,
-            chunks_size,
-        }
+        Chunker { iter, chunks_size }
     }
 }
 
