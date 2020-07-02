@@ -91,8 +91,21 @@ impl<T: Clone> PQueue<T> {
         self.queue.extend(idx_values);
         self
     }
+
     pub(crate) fn enqueue_one(&mut self, idx_value: IdxValue<T>) -> &mut Self {
         self.queue.push_back(idx_value);
+        self
+    }
+    // tries to join this element with the last item in queue. Implemented only for T:PartialEq
+    pub(crate) fn enqueue_joined(&mut self, idx_value: IdxValue<T>) -> &mut Self
+    where
+        T: PartialEq,
+    {
+        match self.queue.back_mut() {
+            Some(last) if last.result == idx_value.result => last.end = idx_value.end,
+            _ => self.queue.push_back(idx_value),
+        };
+
         self
     }
     //  fn rewind_to(newStart: Idx): PQueue[T]

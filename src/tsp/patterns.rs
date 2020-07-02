@@ -1,5 +1,3 @@
-#![feature(specialization)]
-
 use crate::tsp::pattern::PatternResult::Success;
 use crate::tsp::pattern::{Idx, IdxValue, PQueue, Pattern, PatternResult, WithIndex};
 use std::convert::TryInto;
@@ -89,31 +87,92 @@ where
         queue: &mut PQueue<Self::T>,
         _state: &mut Self::State,
     ) {
-        let mut iter = event.iter();
+        event
+            .iter()
+            .map(|e| IdxValue::new(e.index(), e.index(), PatternResult::Success((self.func)(e))))
+            .for_each(|x| {
+                queue.enqueue_joined(x);
+            })
+    }
 
-        let mut last = match iter.next() {
-            Some(x) => IdxValue::new(x.index(), x.index(), PatternResult::Success((self.func)(x))),
-            None => return,
-        };
+    type W = Idx;
 
-        while let e_opt = iter.next() {
-            match e_opt {
-                Some(e) => {
-                    let value = PatternResult::Success((self.func)(&e));
-                    if value == last.result {
-                        last.end = e.index()
-                    } else {
-                        queue.enqueue_one(last);
-                        let idx = e.index();
-                        last = IdxValue::new(idx, idx, value)
-                    }
-                }
-                None => {
-                    queue.enqueue_one(last);
-                    break;
-                }
-            }
+    fn width(&self) -> Self::W {
+        1
+    }
+}
+
+struct BiPattern<P1, P2, F> {
+    left: P1,
+    right: P2,
+    func: F,
+}
+
+impl<P1, T1, P2, T2, F, T3> BiPattern<P1, P2, F>
+where
+    P1: Pattern<T = T1>,
+    P2: Pattern<T = T2>,
+    T1: Clone,
+    T2: Clone,
+    T3: Clone,
+    F: Fn(T1, T2) -> T3,
+{
+    pub fn new(left: P1, right: P2, func: F) -> Self {
+        BiPattern { left, right, func }
+    }
+}
+
+#[derive(Debug)]
+struct BiPatternState<S1: Default, T1: Clone, S2: Default, T2: Clone> {
+    left: S1,
+    right: S2,
+    left_queue: PQueue<T1>,
+    right_queue: PQueue<T2>,
+}
+
+impl<S1: Default, T1: Clone, S2: Default, T2: Clone> Default for BiPatternState<S1, T1, S2, T2> {
+    fn default() -> Self {
+        BiPatternState::new(S1::default(), S2::default())
+    }
+}
+
+impl<S1: Default, T1: Clone, S2: Default, T2: Clone> BiPatternState<S1, T1, S2, T2> {
+    pub fn new(left: S1, right: S2) -> Self {
+        BiPatternState {
+            left,
+            right,
+            left_queue: PQueue::default(),
+            right_queue: PQueue::default(),
         }
+    }
+}
+
+impl<E, P1, S1, T1, P2, S2, T2, F, T3> Pattern for BiPattern<P1, P2, F>
+where
+    E: WithIndex,
+    P1: Pattern<Event = E, State = S1, T = T1>,
+    P2: Pattern<Event = E, State = S2, T = T2>,
+    T1: Clone,
+    T2: Clone,
+    T3: Clone,
+    S1: Default,
+    S2: Default,
+    F: Fn(T1, T2) -> T3,
+{
+    type State = BiPatternState<S1, T1, S2, T2>;
+    type Event = E;
+    type T = T3;
+
+    fn apply(&self, event: &Vec<E>, queue: &mut PQueue<T3>, state: &mut Self::State) {
+        // todo add async here!
+        self.left
+            .apply(event, &mut state.left_queue, &mut state.left);
+        self.right
+            .apply(event, &mut state.right_queue, &mut state.right);
+
+        // state.left_queue
+
+        unimplemented!()
     }
 
     type W = Idx;
