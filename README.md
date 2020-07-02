@@ -7,7 +7,7 @@ TODO:
 - [ ] Grouping
 - [ ] Patterns
     -  [x] ConstantPattern
-    -  [ ] ExtractPattern
+    -  [x] FunctionPattern
     -  [ ] BiPattern
     -  [ ] ComparePattern
     -  [ ] MapPattern
