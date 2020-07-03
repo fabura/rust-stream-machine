@@ -1,5 +1,5 @@
 use crate::tsp::pattern::{Idx, IdxValue, PQueue, Pattern, PatternResult, WithIndex};
-use std::cmp::min;
+use std::cmp::{max, min};
 use std::marker::PhantomData;
 
 #[derive(Debug, Default)]
@@ -216,6 +216,6 @@ where
     type W = Idx;
 
     fn width(&self) -> Self::W {
-        1
+        max(self.left.width(), self.right.width())
     }
 }
