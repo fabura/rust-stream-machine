@@ -8,7 +8,7 @@ TODO:
 - [ ] Patterns
     -  [x] ConstantPattern
     -  [x] FunctionPattern
-    -  [ ] BiPattern
+    -  [x] BiPattern
     -  [ ] ComparePattern
     -  [ ] MapPattern
     -  [ ] AndThenPattern

@@ -1,14 +1,10 @@
-#[macro_use]
-extern crate lazy_static;
-
 extern crate time;
 
 mod stream;
 mod tsp;
 
 use crate::tsp::pattern::{PatternResult, WithIndex};
-use crate::tsp::patterns::{ConstantPattern, FunctionPattern};
-use crate::tsp::tsp::Chunker;
+use crate::tsp::patterns::{BiPattern, ConstantPattern, FunctionPattern};
 
 #[derive(Debug)]
 struct TestEvent {
@@ -37,9 +33,12 @@ fn main() {
         TestEvent::new(5, 34),
     ];
 
-    let state_machine =
-        tsp::tsp::SimpleMachineMapper::new(FunctionPattern::new(|e: &&TestEvent| e.value));
-    // tsp::tsp::SimpleMachineMapper::new(ConstantPattern::new(PatternResult::Success(3)));
+    let function = FunctionPattern::new(|e: &&TestEvent| e.value);
+    let constant = ConstantPattern::new(PatternResult::Success(35));
+    let bi_pattern = BiPattern::new(function, constant, |a, b| a > b);
+
+    let state_machine = tsp::tsp::SimpleMachineMapper::new(bi_pattern);
+    // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
 
     let iter = state_machine.run(ints.iter().into_iter(), 10);
     {

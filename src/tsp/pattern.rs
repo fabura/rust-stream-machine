@@ -81,9 +81,10 @@ impl<T: Clone> PQueue<T> {
     pub(crate) fn dequeue_option(&mut self) -> Option<IdxValue<T>> {
         self.queue.pop_front()
     }
-    //  fn behead(&mut self)-> () {
-    //      self.queue.emp
-    //  }
+    pub(crate) fn behead(&mut self) -> &mut Self {
+        self.queue.pop_front();
+        self
+    }
     //  fn behead_option(&mut self)-> Option<&PQueue<T>>{
     //      self.queue.pop_front().map(|| self)
     //  }
@@ -108,7 +109,18 @@ impl<T: Clone> PQueue<T> {
 
         self
     }
-    //  fn rewind_to(newStart: Idx): PQueue[T]
+
+    pub(crate) fn rewind_to(&mut self, new_start: Idx) -> &mut Self {
+        while let Some(head) = self.queue.front_mut() {
+            if head.end < new_start {
+                self.queue.pop_front();
+                continue;
+            }
+            head.start = new_start;
+            break;
+        }
+        self
+    }
     //  fn clean(): PQueue[T]
     //
     // fn to_seq: Seq[IdxValue[T]]

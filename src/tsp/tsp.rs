@@ -1,10 +1,7 @@
-use std::collections::VecDeque;
-
-// use itertools::{Itertools, IntoChunks, Chunks};
-
 use crate::tsp::pattern::*;
-use std::marker::PhantomData;
 
+// use std::marker::PhantomData;
+//
 // pub trait Counter< Event, T> {
 //     fn extract<'b>(&'a self, events: &'b Vec<Event>) -> T;
 // }
@@ -41,7 +38,7 @@ where
         SimpleMachineMapper { rule }
     }
 
-    pub fn run<J>(mut self, events_iter: J, chunks_size: usize) -> TSPIter<P, J>
+    pub fn run<J>(&self, events_iter: J, chunks_size: usize) -> TSPIter<P, J>
     where
         J: Iterator<Item = P::Event>,
     {
@@ -49,24 +46,24 @@ where
     }
 }
 
-pub struct TSPIter<P, J>
+pub struct TSPIter<'a, P, J>
 where
     J: Iterator<Item = P::Event>,
     P: Pattern,
 {
-    mapper: SimpleMachineMapper<P>,
+    mapper: &'a SimpleMachineMapper<P>,
     chunker: Chunker<J>,
     //todo Maybe need to add something more complicated here
     results_queue: PQueue<P::T>,
     state: P::State,
 }
 
-impl<P, J> TSPIter<P, J>
+impl<P, J> TSPIter<'_, P, J>
 where
     J: Iterator<Item = P::Event>,
     P: Pattern,
 {
-    pub fn new(mapper: SimpleMachineMapper<P>, chunker: Chunker<J>) -> TSPIter<P, J> {
+    pub fn new(mapper: &SimpleMachineMapper<P>, chunker: Chunker<J>) -> TSPIter<P, J> {
         TSPIter {
             mapper,
             chunker,
@@ -76,7 +73,7 @@ where
     }
 }
 
-impl<P, J> Iterator for TSPIter<P, J>
+impl<P, J> Iterator for TSPIter<'_, P, J>
 where
     P: Pattern,
     J: Iterator<Item = P::Event>,

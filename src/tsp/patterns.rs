@@ -1,6 +1,5 @@
-use crate::tsp::pattern::PatternResult::Success;
 use crate::tsp::pattern::{Idx, IdxValue, PQueue, Pattern, PatternResult, WithIndex};
-use std::convert::TryInto;
+use std::cmp::min;
 use std::marker::PhantomData;
 
 #[derive(Debug, Default)]
@@ -102,7 +101,7 @@ where
     }
 }
 
-struct BiPattern<P1, P2, F> {
+pub struct BiPattern<P1, P2, F> {
     left: P1,
     right: P2,
     func: F,
@@ -115,15 +114,23 @@ where
     T1: Clone,
     T2: Clone,
     T3: Clone,
-    F: Fn(T1, T2) -> T3,
+    F: Fn(&T1, &T2) -> T3,
 {
     pub fn new(left: P1, right: P2, func: F) -> Self {
         BiPattern { left, right, func }
     }
+    fn apply_func(&self, l: &PatternResult<T1>, r: &PatternResult<T2>) -> PatternResult<T3> {
+        match (l, r) {
+            (PatternResult::Success(lt), PatternResult::Success(rt)) => {
+                PatternResult::Success((self.func)(lt, rt))
+            }
+            _ => PatternResult::Failure,
+        }
+    }
 }
 
 #[derive(Debug)]
-struct BiPatternState<S1: Default, T1: Clone, S2: Default, T2: Clone> {
+pub struct BiPatternState<S1: Default, T1: Clone, S2: Default, T2: Clone> {
     left: S1,
     right: S2,
     left_queue: PQueue<T1>,
@@ -157,7 +164,8 @@ where
     T3: Clone,
     S1: Default,
     S2: Default,
-    F: Fn(T1, T2) -> T3,
+    F: Fn(&T1, &T2) -> T3,
+    T3: PartialEq,
 {
     type State = BiPatternState<S1, T1, S2, T2>;
     type Event = E;
@@ -170,9 +178,39 @@ where
         self.right
             .apply(event, &mut state.right_queue, &mut state.right);
 
-        // state.left_queue
+        loop {
+            let (l, r) = match (
+                state.left_queue.head_option(),
+                state.right_queue.head_option(),
+            ) {
+                (Some(l), Some(r)) => (l, r),
+                _ => return,
+            };
 
-        unimplemented!()
+            if l.start < r.start {
+                state.left_queue.rewind_to(r.start);
+                continue;
+            } else if l.start > r.start {
+                state.right_queue.rewind_to(l.start);
+                continue;
+            }
+
+            //at this moment both l and r have same start
+            let end = min(l.end, r.end);
+            queue.enqueue_joined(IdxValue::new(
+                l.start,
+                end,
+                self.apply_func(&l.result, &r.result),
+            ));
+
+            if l.end == r.end {
+                state.left_queue.behead();
+                state.right_queue.behead();
+            } else {
+                state.left_queue.rewind_to(end + 1);
+                state.right_queue.rewind_to(end + 1);
+            }
+        }
     }
 
     type W = Idx;
