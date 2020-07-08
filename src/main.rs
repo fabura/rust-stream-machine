@@ -4,7 +4,9 @@ mod stream;
 mod tsp;
 
 use crate::tsp::pattern::{PatternResult, WithIndex};
-use crate::tsp::patterns::{BiPattern, ConstantPattern, FunctionPattern};
+use crate::tsp::patterns::{
+    AssertPattern, BiPattern, ConstantPattern, FunctionPattern, WindowPattern,
+};
 
 #[derive(Debug)]
 struct TestEvent {
@@ -29,15 +31,17 @@ fn main() {
         TestEvent::new(1, 34),
         TestEvent::new(2, 34),
         TestEvent::new(3, 36),
-        TestEvent::new(4, 34),
+        TestEvent::new(4, 36),
         TestEvent::new(5, 34),
     ];
 
     let function = FunctionPattern::new(|e: &&TestEvent| e.value);
     let constant = ConstantPattern::new(PatternResult::Success(35));
-    let bi_pattern = BiPattern::new(function, constant, |a, b| a > b);
+    let bi_pattern = BiPattern::new(function, constant, |a, b| a < b);
+    let assert = AssertPattern::new(bi_pattern);
+    let window = WindowPattern::new(assert, 2);
 
-    let state_machine = tsp::tsp::SimpleMachineMapper::new(bi_pattern);
+    let state_machine = tsp::tsp::SimpleMachineMapper::new(window);
     // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
 
     let iter = state_machine.run(ints.iter().into_iter(), 10);

@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::collections::VecDeque;
 
 pub trait Pattern {
@@ -116,11 +117,15 @@ impl<T: Clone> PQueue<T> {
                 self.queue.pop_front();
                 continue;
             }
-            head.start = new_start;
+            head.start = max(new_start, head.start);
             break;
         }
         self
     }
+
+    // fn find(&self, Idx) -> u32 {
+    //     self.queue.
+    // }
     //  fn clean(): PQueue[T]
     //
     // fn to_seq: Seq[IdxValue[T]]

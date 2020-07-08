@@ -9,6 +9,7 @@ TODO:
     -  [x] ConstantPattern
     -  [x] FunctionPattern
     -  [x] BiPattern
+    -  [x] AssertPattern
     -  [ ] ComparePattern
     -  [ ] MapPattern
     -  [ ] AndThenPattern
@@ -16,7 +17,7 @@ TODO:
         -  [ ] GroupPattern    
         -  [ ] LagPattern    
 - [ ] Time windows
-- [ ] Event windows
+- [x] Event windows
 - [ ] Parser
     - [ ] AST
     - [ ] Optimizer
