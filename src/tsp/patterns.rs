@@ -1,8 +1,6 @@
 use crate::tsp::pattern::{Idx, IdxValue, PQueue, Pattern, PatternResult, WithIndex};
 use std::cmp::{max, min};
-use std::collections::VecDeque;
 use std::marker::PhantomData;
-use std::os::macos::raw::stat;
 
 #[derive(Debug, Default)]
 pub struct NoState;
@@ -188,13 +186,17 @@ impl<E, P1, S1, T1, P2, S2, T2, F, T3> Pattern for BiPattern<P1, P2, F>
                 (Some(l), Some(r)) => (l, r),
                 _ => return,
             };
-
-            if l.start < r.start {
-                state.left_queue.rewind_to(r.start);
-                continue;
-            } else if l.start > r.start {
-                state.right_queue.rewind_to(l.start);
-                continue;
+            use std::cmp::Ordering;
+            match l.start.cmp(&r.start) {
+                Ordering::Less => {
+                    state.left_queue.rewind_to(r.start);
+                    continue;
+                }
+                Ordering::Greater => {
+                    state.right_queue.rewind_to(l.start);
+                    continue;
+                }
+                Ordering::Equal => {}
             }
 
             //at this moment both l and r have same start
@@ -259,12 +261,7 @@ impl<E, P, S> Pattern for AssertPattern<P>
     ) {
         self.inner
             .apply(event, &mut state.inner_queue, &mut state.inner_state);
-        while let Some(IdxValue {
-                           start,
-                           end,
-                           result: result,
-                       }) = state.inner_queue.dequeue_option()
-        {
+        while let Some(IdxValue { start, end, result }) = state.inner_queue.dequeue_option() {
             queue.enqueue_joined(IdxValue::new(
                 start,
                 end,
@@ -327,21 +324,10 @@ impl<E, P, InnerState> Pattern for WindowPattern<P>
 
     fn apply(&self, event: &Vec<Self::Event>, queue: &mut PQueue<()>, state: &mut Self::State) {
         // apply inner pattern to the input events
-        fn drop_while<T>(queue: &mut VecDeque<T>, f: impl Fn(&T) -> bool) {
-            while let Some(x) = queue.front_mut() {
-                if f(x) {
-                    queue.pop_front();
-                } else {
-                    break;
-                }
-            }
-        }
-
-        self.inner
-            .apply(event, &mut state.inner_queue, &mut state.inner_state);
+        self.inner.apply(event, &mut state.inner_queue, &mut state.inner_state);
 
         while let Some(IdxValue {
-                           start,
+                           start:_,
                            end,
                            result: x,
                        }) = state.inner_queue.dequeue_option()
@@ -374,6 +360,6 @@ impl<E, P, InnerState> Pattern for WindowPattern<P>
     type W = Idx;
 
     fn width(&self) -> Self::W {
-        self.window.size as u64 + self.inner.width()
+        (self.window.size - 1) as u64 + self.inner.width()
     }
 }

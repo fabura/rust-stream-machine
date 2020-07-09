@@ -1,6 +1,5 @@
 extern crate time;
 
-mod stream;
 mod tsp;
 
 use crate::tsp::pattern::{PatternResult, WithIndex};
@@ -44,7 +43,7 @@ fn main() {
     let state_machine = tsp::tsp::SimpleMachineMapper::new(window);
     // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
 
-    let iter = state_machine.run(ints.iter().into_iter(), 10);
+    let iter = state_machine.run(ints.iter(), 1);
     {
         println!("test");
         for x in iter {
