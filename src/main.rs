@@ -3,9 +3,7 @@ extern crate time;
 mod tsp;
 
 use crate::tsp::pattern::{PatternResult, WithIndex};
-use crate::tsp::patterns::{
-    AssertPattern, BiPattern, ConstantPattern, FunctionPattern, WindowPattern,
-};
+use crate::tsp::patterns::{AssertPattern, BiPattern, ConstantPattern, FunctionPattern, WindowPattern, AndThenPattern};
 
 #[derive(Debug)]
 struct TestEvent {
@@ -40,12 +38,18 @@ fn main() {
     let assert = AssertPattern::new(bi_pattern);
     let window = WindowPattern::new(assert, 2);
 
-    let state_machine = tsp::tsp::SimpleMachineMapper::new(window);
+    let function2 = FunctionPattern::new(|e: &&TestEvent| e.value);
+    let constant2 = ConstantPattern::new(PatternResult::Success(35));
+    let bi_pattern2 = BiPattern::new(function2, constant2, |a, b| a < b);
+    let assert2 = AssertPattern::new(bi_pattern2);
+    // let window2 = WindowPattern::new(assert2, 2);
+    let and_then = AndThenPattern::new( assert2, window);
+
+    let state_machine = tsp::tsp::SimpleMachineMapper::new(and_then);
     // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
 
-    let iter = state_machine.run(ints.iter(), 1);
+    let iter = state_machine.run(ints.iter(), 10);
     {
-        println!("test");
         for x in iter {
             println!("{:?}", x)
         }

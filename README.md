@@ -12,7 +12,7 @@ TODO:
     -  [x] AssertPattern
     -  [ ] ComparePattern
     -  [ ] MapPattern
-    -  [ ] AndThenPattern
+    -  [x] AndThenPattern
     -  [ ] WindowPatterns
         -  [ ] GroupPattern    
         -  [ ] LagPattern    
