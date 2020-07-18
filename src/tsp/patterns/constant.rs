@@ -1,8 +1,8 @@
 use std::cmp::{max, min};
 use std::marker::PhantomData;
 
-use crate::tsp::pattern::{Idx, IdxValue, Pattern, PatternResult, PQueue, WithIndex};
-use crate::tsp::common::NoState;
+use crate::tsp::patterns::pattern::{Idx, IdxValue, Pattern, PatternResult, PQueue, WithIndex};
+use crate::tsp::patterns::common::NoState;
 
 #[derive(Clone)]
 pub struct ConstantPattern<E, T: Clone> {

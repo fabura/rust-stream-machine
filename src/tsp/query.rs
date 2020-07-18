@@ -1,4 +1,4 @@
-use crate::tsp::pattern::*;
+use crate::tsp::patterns::pattern::*;
 
 // use std::marker::PhantomData;
 //

@@ -1,13 +1,13 @@
 extern crate time;
 
-use crate::tsp::and_then::AndThenPattern;
-use crate::tsp::assert::AssertPattern;
-use crate::tsp::bi_pattern::BiPattern;
-use crate::tsp::constant::ConstantPattern;
-use crate::tsp::function::FunctionPattern;
-use crate::tsp::pattern::{PatternResult, WithIndex};
-use crate::tsp::tsp::*;
-use crate::tsp::window::WindowPattern;
+use crate::tsp::patterns::and_then::AndThenPattern;
+use crate::tsp::patterns::assert::AssertPattern;
+use crate::tsp::patterns::bi_pattern::BiPattern;
+use crate::tsp::patterns::constant::ConstantPattern;
+use crate::tsp::patterns::function::FunctionPattern;
+use crate::tsp::patterns::pattern::{PatternResult, WithIndex};
+use crate::tsp::patterns::window::WindowPattern;
+use crate::tsp::query::*;
 
 mod tsp;
 
@@ -46,7 +46,7 @@ fn main() {
 
     let and_then = AndThenPattern::new(assert.clone(), window);
 
-    let state_machine = tsp::tsp::SimpleMachineMapper::new(and_then);
+    let state_machine = tsp::query::SimpleMachineMapper::new(and_then);
     // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
 
     let iter = state_machine.run(ints.iter(), 10);
