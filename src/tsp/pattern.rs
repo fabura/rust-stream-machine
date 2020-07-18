@@ -24,16 +24,16 @@ pub trait WithIndex {
 
 #[derive(Debug, Clone)]
 pub enum PatternResult<T: Sized>
-where
-    T: Clone,
+    where
+        T: Clone,
 {
     Failure,
     Success(T), //todo make result fixed size
 }
 
 impl<T> PartialEq for PatternResult<T>
-where
-    T: PartialEq + Clone,
+    where
+        T: PartialEq + Clone,
 {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -89,7 +89,7 @@ impl<T: Clone> PQueue<T> {
     //  fn behead_option(&mut self)-> Option<&PQueue<T>>{
     //      self.queue.pop_front().map(|| self)
     //  }
-    pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item = IdxValue<T>>) -> &mut Self {
+    pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item=IdxValue<T>>) -> &mut Self {
         self.queue.extend(idx_values);
         self
     }
@@ -100,8 +100,8 @@ impl<T: Clone> PQueue<T> {
     }
     // tries to join this element with the last item in queue. Implemented only for T:PartialEq
     pub(crate) fn enqueue_joined(&mut self, idx_value: IdxValue<T>) -> &mut Self
-    where
-        T: PartialEq,
+        where
+            T: PartialEq,
     {
         match self.queue.back_mut() {
             Some(last) if last.result == idx_value.result => last.end = idx_value.end,

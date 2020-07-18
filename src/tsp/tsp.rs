@@ -23,33 +23,33 @@ use crate::tsp::pattern::*;
 // }
 
 pub struct SimpleMachineMapper<P>
-where
-    P: Pattern,
+    where
+        P: Pattern,
 {
     rule: P,
     // counter: Box<dyn Counter< Event>>,
 }
 
 impl<P> SimpleMachineMapper<P>
-where
-    P: Pattern,
+    where
+        P: Pattern,
 {
     pub fn new(rule: P /*, counter: Box<dyn Counter< Event>>*/) -> SimpleMachineMapper<P> {
         SimpleMachineMapper { rule }
     }
 
     pub fn run<J>(&self, events_iter: J, chunks_size: usize) -> TSPIter<P, J>
-    where
-        J: Iterator<Item = P::Event>,
+        where
+            J: Iterator<Item=P::Event>,
     {
         TSPIter::new(self, Chunker::new(events_iter, chunks_size))
     }
 }
 
 pub struct TSPIter<'a, P, J>
-where
-    J: Iterator<Item = P::Event>,
-    P: Pattern,
+    where
+        J: Iterator<Item=P::Event>,
+        P: Pattern,
 {
     mapper: &'a SimpleMachineMapper<P>,
     chunker: Chunker<J>,
@@ -59,9 +59,9 @@ where
 }
 
 impl<P, J> TSPIter<'_, P, J>
-where
-    J: Iterator<Item = P::Event>,
-    P: Pattern,
+    where
+        J: Iterator<Item=P::Event>,
+        P: Pattern,
 {
     pub fn new(mapper: &SimpleMachineMapper<P>, chunker: Chunker<J>) -> TSPIter<P, J> {
         TSPIter {
@@ -74,9 +74,9 @@ where
 }
 
 impl<P, J> Iterator for TSPIter<'_, P, J>
-where
-    P: Pattern,
-    J: Iterator<Item = P::Event>,
+    where
+        P: Pattern,
+        J: Iterator<Item=P::Event>,
 {
     type Item = IdxValue<P::T>;
 
@@ -103,8 +103,8 @@ pub struct Chunker<I> {
 }
 
 impl<I> Chunker<I>
-where
-    I: Iterator,
+    where
+        I: Iterator,
 {
     pub(crate) fn new(iter: I, chunks_size: usize) -> Chunker<I> {
         Chunker { iter, chunks_size }
@@ -112,8 +112,8 @@ where
 }
 
 impl<I> Iterator for Chunker<I>
-where
-    I: Iterator,
+    where
+        I: Iterator,
 {
     type Item = Vec<I::Item>;
 

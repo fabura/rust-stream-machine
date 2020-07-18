@@ -1,9 +1,15 @@
 extern crate time;
 
-mod tsp;
-
+use crate::tsp::and_then::AndThenPattern;
+use crate::tsp::assert::AssertPattern;
+use crate::tsp::bi_pattern::BiPattern;
+use crate::tsp::constant::ConstantPattern;
+use crate::tsp::function::FunctionPattern;
 use crate::tsp::pattern::{PatternResult, WithIndex};
-use crate::tsp::patterns::{AssertPattern, BiPattern, ConstantPattern, FunctionPattern, WindowPattern, AndThenPattern};
+use crate::tsp::tsp::*;
+use crate::tsp::window::WindowPattern;
+
+mod tsp;
 
 #[derive(Debug)]
 struct TestEvent {
@@ -36,14 +42,9 @@ fn main() {
     let constant = ConstantPattern::new(PatternResult::Success(35));
     let bi_pattern = BiPattern::new(function, constant, |a, b| a < b);
     let assert = AssertPattern::new(bi_pattern);
-    let window = WindowPattern::new(assert, 2);
+    let window = WindowPattern::new(assert.clone(), 2);
 
-    let function2 = FunctionPattern::new(|e: &&TestEvent| e.value);
-    let constant2 = ConstantPattern::new(PatternResult::Success(35));
-    let bi_pattern2 = BiPattern::new(function2, constant2, |a, b| a < b);
-    let assert2 = AssertPattern::new(bi_pattern2);
-    // let window2 = WindowPattern::new(assert2, 2);
-    let and_then = AndThenPattern::new( assert2, window);
+    let and_then = AndThenPattern::new(assert.clone(), window);
 
     let state_machine = tsp::tsp::SimpleMachineMapper::new(and_then);
     // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
