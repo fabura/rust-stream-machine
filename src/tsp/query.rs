@@ -1,90 +1,78 @@
-use crate::tsp::patterns::pattern::*;
+use crate::tsp::patterns::*;
+use crate::tsp::projections::*;
 
-// use std::marker::PhantomData;
-//
-// pub trait Counter< Event, T> {
-//     fn extract<'b>(&'a self, events: &'b Vec<Event>) -> T;
-// }
-
-// pub struct EmptyCounter<T> {
-//     phantom: PhantomData<T>
-// }
-//
-// impl<T> EmptyCounter<T> {
-//     pub fn new() -> Self {
-//         EmptyCounter { phantom: PhantomData }
-//     }
-// }
-
-// impl< Event> Counter< Event, i32> for EmptyCounter<Event> {
-//     fn extract<'b>(&'a self, events: &'b Vec<Event>) -> i32 {
-//         -1
-//     }
-// }
-
-pub struct SimpleMachineMapper<P>
+pub struct SimpleMachineMapper<Proj, Pat>
     where
-        P: Pattern,
+        Proj: Projection,
+        Pat: Pattern,
 {
-    rule: P,
-    // counter: Box<dyn Counter< Event>>,
+    projection: Proj,
+    rule: Pat,
 }
 
-impl<P> SimpleMachineMapper<P>
+impl<Proj, Pat> SimpleMachineMapper<Proj, Pat>
     where
-        P: Pattern,
+        Proj: Projection,
+        Pat: Pattern<Event=Proj::Event>,
 {
-    pub fn new(rule: P /*, counter: Box<dyn Counter< Event>>*/) -> SimpleMachineMapper<P> {
-        SimpleMachineMapper { rule }
+    pub fn new(projection: Proj, rule: Pat) -> SimpleMachineMapper<Proj, Pat> {
+        SimpleMachineMapper { projection, rule }
     }
 
-    pub fn run<J>(&self, events_iter: J, chunks_size: usize) -> TSPIter<P, J>
+    pub fn run<J>(&self, events_iter: J, chunks_size: usize) -> TSPIter<Proj, Pat, J>
         where
-            J: Iterator<Item=P::Event>,
+            J: Iterator<Item=Proj::Event>,
     {
         TSPIter::new(self, Chunker::new(events_iter, chunks_size))
     }
 }
 
-pub struct TSPIter<'a, P, J>
+pub struct TSPIter<'a, Proj, Pat, J>
     where
-        J: Iterator<Item=P::Event>,
-        P: Pattern,
+        J: Iterator<Item=Proj::Event>,
+        Proj: Projection,
+        Pat: Pattern<Event=Proj::Event>,
 {
-    mapper: &'a SimpleMachineMapper<P>,
+    mapper: &'a SimpleMachineMapper<Proj, Pat>,
     chunker: Chunker<J>,
     //todo Maybe need to add something more complicated here
-    results_queue: PQueue<P::T>,
-    state: P::State,
+    results_queue: PQueue<Pat::T>,
+    projection_state: Proj::State,
+    state: Pat::State,
 }
 
-impl<P, J> TSPIter<'_, P, J>
+impl<Proj, Pat, J> TSPIter<'_, Proj, Pat, J>
     where
-        J: Iterator<Item=P::Event>,
-        P: Pattern,
+        J: Iterator<Item=Proj::Event>,
+        Proj: Projection,
+        Pat: Pattern<Event=Proj::Event>,
 {
-    pub fn new(mapper: &SimpleMachineMapper<P>, chunker: Chunker<J>) -> TSPIter<P, J> {
+    pub fn new(mapper: &SimpleMachineMapper<Proj, Pat>, chunker: Chunker<J>) -> TSPIter<Proj, Pat, J> {
         TSPIter {
             mapper,
             chunker,
             results_queue: PQueue::default(),
-            state: P::State::default(),
+            projection_state: Proj::State::default(),
+            state: Pat::State::default(),
         }
     }
 }
 
-impl<P, J> Iterator for TSPIter<'_, P, J>
+impl<Proj, Pat, J> Iterator for TSPIter<'_, Proj, Pat, J>
     where
-        P: Pattern,
-        J: Iterator<Item=P::Event>,
+        Proj: Projection,
+        Pat: Pattern<Event=Proj::Event>,
+        J: Iterator<Item=Proj::Event>,
 {
-    type Item = IdxValue<P::T>;
+    type Item = Proj::T;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             match self.results_queue.dequeue_option() {
-                v @ Some(_) => return v,
+                Some(idx_value) => {
+                    return Some(self.mapper.projection.extract(&mut self.projection_state, idx_value.start, idx_value.end));
+                }
                 None => {
                     self.mapper.rule.apply(
                         &self.chunker.next()?,

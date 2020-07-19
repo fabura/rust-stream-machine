@@ -1,6 +1,3 @@
-use std::cmp::{max, min};
-use std::marker::PhantomData;
-
 use crate::tsp::patterns::pattern::{Idx, IdxValue, Pattern, PatternResult, PQueue, WithIndex};
 
 #[derive(Debug, Copy, Clone)]
