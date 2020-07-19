@@ -3,8 +3,15 @@
 
 TODO:
 - [x] StateMachine
-- [ ] Implement counting
-- [ ] Grouping
+- [ ] Projections
+    - [x] Constant
+    - [ ] Function
+    - [ ] First
+    - [ ] Last
+    - [ ] Sum
+    - [ ] Avg
+    - [ ] Min, Max
+- [ ] Partitioning
 - [ ] Patterns
     -  [x] ConstantPattern
     -  [x] FunctionPattern
