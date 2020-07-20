@@ -1,8 +1,10 @@
+#![deny(warnings, /*missing_docs*/)]
+
 extern crate time;
 
 use crate::tsp::patterns::*;
 use crate::tsp::projections::*;
-use crate::tsp::query::*;
+// use crate::tsp::query::*;
 
 mod tsp;
 

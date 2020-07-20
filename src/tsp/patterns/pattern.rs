@@ -5,7 +5,7 @@ pub trait Pattern {
     type State: Default;
     type Event: WithIndex;
     type T: Clone;
-    fn apply(&self, event: &Vec<Self::Event>, queue: &mut PQueue<Self::T>, state: &mut Self::State);
+    fn apply(&self, event: &[Self::Event], queue: &mut PQueue<Self::T>, state: &mut Self::State);
 
     type W: Width;
 
@@ -71,6 +71,7 @@ impl<T: Clone> Default for PQueue<T> {
 }
 
 impl<T: Clone> PQueue<T> {
+    #[allow(dead_code)]
     pub(crate) fn size(&self) -> usize {
         self.queue.len()
     }
@@ -94,10 +95,6 @@ impl<T: Clone> PQueue<T> {
         self
     }
 
-    pub(crate) fn enqueue_one(&mut self, idx_value: IdxValue<T>) -> &mut Self {
-        self.queue.push_back(idx_value);
-        self
-    }
     // tries to join this element with the last item in queue. Implemented only for T:PartialEq
     pub(crate) fn enqueue_joined(&mut self, idx_value: IdxValue<T>) -> &mut Self
         where

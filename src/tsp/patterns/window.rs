@@ -42,12 +42,12 @@ impl<E, P, InnerState> Pattern for WindowPattern<P>
     type Event = E;
     type T = ();
 
-    fn apply(&self, event: &Vec<Self::Event>, queue: &mut PQueue<()>, state: &mut Self::State) {
+    fn apply(&self, event: &[Self::Event], queue: &mut PQueue<()>, state: &mut Self::State) {
         // apply inner pattern to the input events
         self.inner
             .apply(event, &mut state.inner_queue, &mut state.inner_state);
 
-        while let Some(IdxValue { start, end, result }) = state.inner_queue.dequeue_option()
+        while let Some(IdxValue { start: _, end, result }) = state.inner_queue.dequeue_option()
         {
             assert!(state.last_end < end);
             match result {

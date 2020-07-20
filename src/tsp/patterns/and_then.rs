@@ -41,7 +41,7 @@ impl<E, P1, S1, P2, S2> Pattern for AndThenPattern<P1, P2>
 
     fn apply(
         &self,
-        event: &Vec<Self::Event>,
+        event: &[Self::Event],
         queue: &mut PQueue<Self::T>,
         state: &mut Self::State,
     ) {

@@ -32,7 +32,7 @@ impl<E: WithIndex, T: Clone> Pattern for ConstantPattern<E, T> {
 
     fn apply(
         &self,
-        event: &Vec<Self::Event>,
+        event: &[Self::Event],
         queue: &mut PQueue<Self::T>,
         _state: &mut Self::State,
     ) {

@@ -32,7 +32,7 @@ impl<E, P, S> Pattern for AssertPattern<P>
 
     fn apply(
         &self,
-        event: &Vec<Self::Event>,
+        event: &[Self::Event],
         queue: &mut PQueue<Self::T>,
         state: &mut Self::State,
     ) {

@@ -73,7 +73,7 @@ impl<E, P1, S1, T1, P2, S2, T2, F, T3> Pattern for BiPattern<P1, P2, F>
     type Event = E;
     type T = T3;
 
-    fn apply(&self, event: &Vec<E>, queue: &mut PQueue<T3>, state: &mut Self::State) {
+    fn apply(&self, event: &[E], queue: &mut PQueue<T3>, state: &mut Self::State) {
         // todo add async here!
         self.left
             .apply(event, &mut state.left_queue, &mut state.left);

@@ -34,7 +34,7 @@ impl<E: WithIndex, F, T: Clone + PartialEq> Pattern for FunctionPattern<E, F, T>
     type T = T;
     fn apply(
         &self,
-        event: &Vec<Self::Event>,
+        event: &[Self::Event],
         queue: &mut PQueue<Self::T>,
         _state: &mut Self::State,
     ) {

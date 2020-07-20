@@ -6,7 +6,7 @@ pub trait Projection {
     type Event: WithIndex;
     type State: Default;
     type T: Clone;
-    fn update(&self, events: &Vec<Self::Event>, state: &mut Self::State);
+    fn update(&self, events: &[Self::Event], state: &mut Self::State);
 
     fn extract(&self,  state: &mut Self::State, start: Idx, end: Idx) -> Self::T;
 }
@@ -27,7 +27,7 @@ impl<Event: WithIndex, T: Clone> Projection for ConstantProjection<Event, T> {
     type State = NoProjectionState;
     type T = T;
 
-    fn update(&self, _events: &Vec<Self::Event>, _state: &mut Self::State) {}
+    fn update(&self, _events: &[Self::Event], _state: &mut Self::State) {}
 
     fn extract(&self, _state: &mut Self::State, _start: Idx, _end: Idx) -> Self::T {
         self.0.clone()
