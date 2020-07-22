@@ -28,6 +28,7 @@ impl WithIndex for &TestEvent {
 
 fn main() {
     let ints = &[
+        TestEvent::new(0, 33),
         TestEvent::new(1, 34),
         TestEvent::new(2, 34),
         TestEvent::new(3, 36),
@@ -43,7 +44,7 @@ fn main() {
 
     let and_then = AndThenPattern::new(assert.clone(), window);
 
-    let projection = ConstantProjection::new(1);
+    let projection = FirstProjection::new(|e:TestEvent| e.value);
     let state_machine = tsp::query::SimpleMachineMapper::new(projection, and_then);
     // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
 
