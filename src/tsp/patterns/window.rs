@@ -1,4 +1,4 @@
-use crate::tsp::patterns::pattern::{Idx, IdxValue, Pattern, PatternResult, PQueue, WithIndex};
+use crate::tsp::patterns::pattern::{Idx, IdxValue, PQueue, Pattern, PatternResult};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Window {
@@ -12,8 +12,8 @@ pub struct WindowPattern<P> {
 }
 
 impl<P> WindowPattern<P>
-    where
-        P: Pattern<T=()>,
+where
+    P: Pattern<T = ()>,
 {
     pub fn new(inner: P, size: u32) -> Self {
         assert!(size > 0);
@@ -33,21 +33,34 @@ pub struct WindowPatternState<S: Default> {
 }
 
 impl<E, P, InnerState> Pattern for WindowPattern<P>
-    where
-        E: WithIndex,
-        InnerState: Default,
-        P: Pattern<Event=E, T=(), State=InnerState, W=Idx>,
+where
+    InnerState: Default,
+    P: Pattern<Event = E, T = (), State = InnerState, W = Idx>,
 {
     type State = WindowPatternState<InnerState>;
     type Event = E;
     type T = ();
 
-    fn apply(&self, event: &[Self::Event], queue: &mut PQueue<()>, state: &mut Self::State) {
+    fn apply(
+        &self,
+        start_idx: Idx,
+        event: &[Self::Event],
+        queue: &mut PQueue<()>,
+        state: &mut Self::State,
+    ) {
         // apply inner pattern to the input events
-        self.inner
-            .apply(event, &mut state.inner_queue, &mut state.inner_state);
+        self.inner.apply(
+            start_idx,
+            event,
+            &mut state.inner_queue,
+            &mut state.inner_state,
+        );
 
-        while let Some(IdxValue { start: _, end, result }) = state.inner_queue.dequeue_option()
+        while let Some(IdxValue {
+            start: _,
+            end,
+            result,
+        }) = state.inner_queue.dequeue_option()
         {
             assert!(state.last_end < end);
             match result {
@@ -62,7 +75,11 @@ impl<E, P, InnerState> Pattern for WindowPattern<P>
                 }
                 PatternResult::Success(()) => {
                     if state.last_success {
-                        queue.enqueue_joined(IdxValue::new(state.last_end + 1, end, PatternResult::Success(())));
+                        queue.enqueue_joined(IdxValue::new(
+                            state.last_end + 1,
+                            end,
+                            PatternResult::Success(()),
+                        ));
                         state.last_end = end;
                         state.last_success = true;
                     } else {

@@ -2,36 +2,36 @@ use crate::tsp::patterns::*;
 use crate::tsp::projections::*;
 
 pub struct SimpleMachineMapper<Proj, Pat>
-    where
-        Proj: Projection,
-        Pat: Pattern,
+where
+    Proj: Projection,
+    Pat: Pattern,
 {
     projection: Proj,
     rule: Pat,
 }
 
 impl<Proj, Pat> SimpleMachineMapper<Proj, Pat>
-    where
-        Proj: Projection,
-        Pat: Pattern<Event=Proj::Event>,
+where
+    Proj: Projection,
+    Pat: Pattern<Event = Proj::Event>,
 {
     pub fn new(projection: Proj, rule: Pat) -> SimpleMachineMapper<Proj, Pat> {
         SimpleMachineMapper { projection, rule }
     }
 
     pub fn run<J>(&self, events_iter: J, chunks_size: usize) -> TSPIter<Proj, Pat, J>
-        where
-            J: Iterator<Item=Proj::Event>,
+    where
+        J: Iterator<Item = Proj::Event>,
     {
         TSPIter::new(self, Chunker::new(events_iter, chunks_size))
     }
 }
 
 pub struct TSPIter<'a, Proj, Pat, J>
-    where
-        J: Iterator<Item=Proj::Event>,
-        Proj: Projection,
-        Pat: Pattern<Event=Proj::Event>,
+where
+    J: Iterator<Item = Proj::Event>,
+    Proj: Projection,
+    Pat: Pattern<Event = Proj::Event>,
 {
     mapper: &'a SimpleMachineMapper<Proj, Pat>,
     chunker: Chunker<J>,
@@ -42,12 +42,15 @@ pub struct TSPIter<'a, Proj, Pat, J>
 }
 
 impl<Proj, Pat, J> TSPIter<'_, Proj, Pat, J>
-    where
-        J: Iterator<Item=Proj::Event>,
-        Proj: Projection,
-        Pat: Pattern<Event=Proj::Event>,
+where
+    J: Iterator<Item = Proj::Event>,
+    Proj: Projection,
+    Pat: Pattern<Event = Proj::Event>,
 {
-    pub fn new(mapper: &SimpleMachineMapper<Proj, Pat>, chunker: Chunker<J>) -> TSPIter<Proj, Pat, J> {
+    pub fn new(
+        mapper: &SimpleMachineMapper<Proj, Pat>,
+        chunker: Chunker<J>,
+    ) -> TSPIter<Proj, Pat, J> {
         TSPIter {
             mapper,
             chunker,
@@ -59,26 +62,39 @@ impl<Proj, Pat, J> TSPIter<'_, Proj, Pat, J>
 }
 
 impl<Proj, Pat, J> Iterator for TSPIter<'_, Proj, Pat, J>
-    where
-        Proj: Projection,
-        Pat: Pattern<Event=Proj::Event>,
-        J: Iterator<Item=Proj::Event>,
+where
+    Proj: Projection,
+    Pat: Pattern<Event = Proj::Event>,
+    J: Iterator<Item = Proj::Event>,
 {
     type Item = Proj::T;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
+        let mut start_idx = 0u64;
         loop {
             match self.results_queue.dequeue_option() {
                 Some(idx_value) => {
-                    return Some(self.mapper.projection.extract(&mut self.projection_state, idx_value.start, idx_value.end));
+                    return Some(self.mapper.projection.extract(
+                        &mut self.projection_state,
+                        idx_value.start,
+                        idx_value.end,
+                    ));
                 }
                 None => {
+                    let next_batch = &self.chunker.next()?;
                     self.mapper.rule.apply(
-                        &self.chunker.next()?,
+                        start_idx,
+                        next_batch,
                         &mut self.results_queue,
                         &mut self.state,
                     );
+                    self.mapper.projection.update(
+                        start_idx,
+                        next_batch,
+                        &mut self.projection_state,
+                    );
+                    start_idx += next_batch.len() as u64;
                 }
             }
         }
@@ -91,8 +107,8 @@ pub struct Chunker<I> {
 }
 
 impl<I> Chunker<I>
-    where
-        I: Iterator,
+where
+    I: Iterator,
 {
     pub(crate) fn new(iter: I, chunks_size: usize) -> Chunker<I> {
         Chunker { iter, chunks_size }
@@ -100,8 +116,8 @@ impl<I> Chunker<I>
 }
 
 impl<I> Iterator for Chunker<I>
-    where
-        I: Iterator,
+where
+    I: Iterator,
 {
     type Item = Vec<I::Item>;
 

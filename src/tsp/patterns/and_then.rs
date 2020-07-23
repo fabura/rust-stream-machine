@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 
-use crate::tsp::patterns::pattern::{Idx, IdxValue, Pattern, PatternResult, PQueue, WithIndex};
+use crate::tsp::patterns::pattern::{Idx, IdxValue, PQueue, Pattern, PatternResult};
 
 #[derive(Clone)]
 pub struct AndThenPattern<P1, P2> {
@@ -9,10 +9,9 @@ pub struct AndThenPattern<P1, P2> {
 }
 
 impl<E, P1, P2> AndThenPattern<P1, P2>
-    where
-        E: WithIndex,
-        P1: Pattern<Event=E, T=()>,
-        P2: Pattern<Event=E, T=()>,
+where
+    P1: Pattern<Event = E, T = ()>,
+    P2: Pattern<Event = E, T = ()>,
 {
     pub fn new(first: P1, second: P2) -> Self {
         AndThenPattern { first, second }
@@ -28,12 +27,11 @@ pub struct AndThenPatternState<S1: Default, S2: Default> {
 }
 
 impl<E, P1, S1, P2, S2> Pattern for AndThenPattern<P1, P2>
-    where
-        E: WithIndex,
-        S1: Default,
-        S2: Default,
-        P1: Pattern<Event=E, State=S1, T=(), W=Idx>,
-        P2: Pattern<Event=E, State=S2, T=(), W=Idx>,
+where
+    S1: Default,
+    S2: Default,
+    P1: Pattern<Event = E, State = S1, T = (), W = Idx>,
+    P2: Pattern<Event = E, State = S2, T = (), W = Idx>,
 {
     type State = AndThenPatternState<S1, S2>;
     type Event = E;
@@ -41,23 +39,32 @@ impl<E, P1, S1, P2, S2> Pattern for AndThenPattern<P1, P2>
 
     fn apply(
         &self,
+        start_idx: Idx,
         event: &[Self::Event],
         queue: &mut PQueue<Self::T>,
         state: &mut Self::State,
     ) {
-        self.first
-            .apply(event, &mut state.first_queue, &mut state.first_state);
-        self.second
-            .apply(event, &mut state.second_queue, &mut state.second_state);
+        self.first.apply(
+            start_idx,
+            event,
+            &mut state.first_queue,
+            &mut state.first_state,
+        );
+        self.second.apply(
+            start_idx,
+            event,
+            &mut state.second_queue,
+            &mut state.second_state,
+        );
 
         let offset = self.second.width() + 1;
 
         // while we have results in first_queue
         while let Some(IdxValue {
-                           start: first_start,
-                           end: first_end,
-                           result: first_result,
-                       }) = state.first_queue.head_option()
+            start: first_start,
+            end: first_end,
+            result: first_result,
+        }) = state.first_queue.head_option()
         {
             let result_begin = first_start + offset;
             let result_end = first_end + offset;
@@ -69,10 +76,10 @@ impl<E, P1, S1, P2, S2> Pattern for AndThenPattern<P1, P2>
                 match state.second_queue.head_option() {
                     // we produce result using head of second_queue
                     Some(IdxValue {
-                             start: second_start,
-                             end: second_end,
-                             result: second_result,
-                         }) if second_start <= &result_end => {
+                        start: second_start,
+                        end: second_end,
+                        result: second_result,
+                    }) if second_start <= &result_end => {
                         if second_end < &result_begin {
                             state.second_queue.rewind_to(result_begin);
                             continue;
@@ -82,7 +89,9 @@ impl<E, P1, S1, P2, S2> Pattern for AndThenPattern<P1, P2>
                         end = min(result_end, *second_end);
 
                         let result = match (first_result, second_result) {
-                            (PatternResult::Success(()), PatternResult::Success(())) => PatternResult::Success(()),
+                            (PatternResult::Success(()), PatternResult::Success(())) => {
+                                PatternResult::Success(())
+                            }
                             _ => PatternResult::Failure,
                         };
                         queue.enqueue_joined(IdxValue::new(*start, end, result));

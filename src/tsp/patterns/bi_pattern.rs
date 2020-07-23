@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 
-use crate::tsp::patterns::pattern::{Idx, IdxValue, Pattern, PatternResult, PQueue, WithIndex};
+use crate::tsp::patterns::pattern::{Idx, IdxValue, PQueue, Pattern, PatternResult};
 
 #[derive(Clone)]
 pub struct BiPattern<P1, P2, F> {
@@ -10,13 +10,13 @@ pub struct BiPattern<P1, P2, F> {
 }
 
 impl<P1, T1, P2, T2, F, T3> BiPattern<P1, P2, F>
-    where
-        P1: Pattern<T=T1>,
-        P2: Pattern<T=T2>,
-        T1: Clone,
-        T2: Clone,
-        T3: Clone,
-        F: Fn(&T1, &T2) -> T3,
+where
+    P1: Pattern<T = T1>,
+    P2: Pattern<T = T2>,
+    T1: Clone,
+    T2: Clone,
+    T3: Clone,
+    F: Fn(&T1, &T2) -> T3,
 {
     pub fn new(left: P1, right: P2, func: F) -> Self {
         BiPattern { left, right, func }
@@ -57,28 +57,27 @@ impl<S1: Default, T1: Clone, S2: Default, T2: Clone> BiPatternState<S1, T1, S2, 
 }
 
 impl<E, P1, S1, T1, P2, S2, T2, F, T3> Pattern for BiPattern<P1, P2, F>
-    where
-        E: WithIndex,
-        P1: Pattern<Event=E, State=S1, T=T1, W=Idx>,
-        P2: Pattern<Event=E, State=S2, T=T2, W=Idx>,
-        T1: Clone,
-        T2: Clone,
-        T3: Clone,
-        S1: Default,
-        S2: Default,
-        F: Fn(&T1, &T2) -> T3,
-        T3: PartialEq,
+where
+    P1: Pattern<Event = E, State = S1, T = T1, W = Idx>,
+    P2: Pattern<Event = E, State = S2, T = T2, W = Idx>,
+    T1: Clone,
+    T2: Clone,
+    T3: Clone,
+    S1: Default,
+    S2: Default,
+    F: Fn(&T1, &T2) -> T3,
+    T3: PartialEq,
 {
     type State = BiPatternState<S1, T1, S2, T2>;
     type Event = E;
     type T = T3;
 
-    fn apply(&self, event: &[E], queue: &mut PQueue<T3>, state: &mut Self::State) {
+    fn apply(&self, start_idx: Idx, event: &[E], queue: &mut PQueue<T3>, state: &mut Self::State) {
         // todo add async here!
         self.left
-            .apply(event, &mut state.left_queue, &mut state.left);
+            .apply(start_idx, event, &mut state.left_queue, &mut state.left);
         self.right
-            .apply(event, &mut state.right_queue, &mut state.right);
+            .apply(start_idx, event, &mut state.right_queue, &mut state.right);
 
         loop {
             let (l, r) = match (

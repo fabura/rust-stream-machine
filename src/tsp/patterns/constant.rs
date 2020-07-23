@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
-use crate::tsp::patterns::pattern::{Idx, IdxValue, Pattern, PatternResult, PQueue, WithIndex};
 use crate::tsp::patterns::common::NoState;
+use crate::tsp::patterns::pattern::{Idx, IdxValue, PQueue, Pattern, PatternResult};
 
 #[derive(Clone)]
 pub struct ConstantPattern<E, T: Clone> {
@@ -18,30 +18,25 @@ impl<E, T: Clone> ConstantPattern<E, T> {
     }
 }
 
-fn zip_with<T, U, F, R>(this: Option<T>, other: Option<U>, f: F) -> Option<R>
-    where
-        F: FnOnce(T, U) -> R,
-{
-    Some(f(this?, other?))
-}
-
-impl<E: WithIndex, T: Clone> Pattern for ConstantPattern<E, T> {
+impl<E, T: Clone> Pattern for ConstantPattern<E, T> {
     type State = NoState;
     type Event = E;
     type T = T;
 
     fn apply(
         &self,
+        start_idx: Idx,
         event: &[Self::Event],
         queue: &mut PQueue<Self::T>,
         _state: &mut Self::State,
     ) {
-        queue.enqueue(
-            zip_with(event.first(), event.last(), |first, last| {
-                IdxValue::new(first.index(), last.index(), self.value.clone())
-            })
-                .into_iter(),
-        );
+        if !event.is_empty() {
+            queue.enqueue_one(IdxValue::new(
+                start_idx,
+                start_idx + event.len() as Idx - 1,
+                self.value.clone(),
+            ));
+        }
     }
 
     type W = Idx;

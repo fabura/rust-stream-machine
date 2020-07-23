@@ -20,12 +20,7 @@ impl TestEvent {
     }
 }
 
-impl WithIndex for &TestEvent {
-    fn index(&self) -> u64 {
-        self.idx
-    }
-}
-
+#[allow(dead_code)]
 fn main() {
     let ints = &[
         TestEvent::new(0, 33),
@@ -36,16 +31,16 @@ fn main() {
         TestEvent::new(5, 34),
     ];
 
-    let function = FunctionPattern::new(|e: &&TestEvent| e.value);
+    let function = FunctionPattern::new(|e: &&TestEvent| e.idx);
     let constant = ConstantPattern::new(PatternResult::Success(35));
-    let bi_pattern = BiPattern::new(function, constant, |a, b| a < b);
+    let bi_pattern = BiPattern::new(function.clone(), constant, |a, b| a < b);
     let assert = AssertPattern::new(bi_pattern);
     let window = WindowPattern::new(assert.clone(), 2);
 
-    let and_then = AndThenPattern::new(assert.clone(), window);
+    let _and_then = AndThenPattern::new(assert.clone(), window);
 
-    let projection = FirstProjection::new(|e:TestEvent| e.value);
-    let state_machine = tsp::query::SimpleMachineMapper::new(projection, and_then);
+    let projection = FirstProjection::new(|e: &&TestEvent| e.value);
+    let state_machine = tsp::query::SimpleMachineMapper::new(projection, function.clone());
     // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
 
     let iter = state_machine.run(ints.iter(), 10);

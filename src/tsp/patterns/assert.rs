@@ -1,4 +1,5 @@
-use crate::tsp::patterns::pattern::{IdxValue, Pattern, PatternResult, PQueue, WithIndex};
+use crate::tsp::patterns::pattern::{IdxValue, PQueue, Pattern, PatternResult};
+use crate::tsp::patterns::Idx;
 
 #[derive(Clone)]
 pub struct AssertPattern<P> {
@@ -6,8 +7,8 @@ pub struct AssertPattern<P> {
 }
 
 impl<P> AssertPattern<P>
-    where
-        P: Pattern<T=bool>,
+where
+    P: Pattern<T = bool>,
 {
     pub fn new(inner: P) -> Self {
         AssertPattern { inner }
@@ -21,10 +22,9 @@ pub struct AssertPatternState<S: Default> {
 }
 
 impl<E, P, S> Pattern for AssertPattern<P>
-    where
-        S: Default,
-        E: WithIndex,
-        P: Pattern<State=S, T=bool, Event=E>,
+where
+    S: Default,
+    P: Pattern<State = S, T = bool, Event = E>,
 {
     type State = AssertPatternState<S>;
     type Event = E;
@@ -32,12 +32,17 @@ impl<E, P, S> Pattern for AssertPattern<P>
 
     fn apply(
         &self,
+        start_idx: Idx,
         event: &[Self::Event],
         queue: &mut PQueue<Self::T>,
         state: &mut Self::State,
     ) {
-        self.inner
-            .apply(event, &mut state.inner_queue, &mut state.inner_state);
+        self.inner.apply(
+            start_idx,
+            event,
+            &mut state.inner_queue,
+            &mut state.inner_state,
+        );
         while let Some(IdxValue { start, end, result }) = state.inner_queue.dequeue_option() {
             queue.enqueue_joined(IdxValue::new(
                 start,

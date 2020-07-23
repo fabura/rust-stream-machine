@@ -3,9 +3,15 @@ use std::collections::VecDeque;
 
 pub trait Pattern {
     type State: Default;
-    type Event: WithIndex;
+    type Event;
     type T: Clone;
-    fn apply(&self, event: &[Self::Event], queue: &mut PQueue<Self::T>, state: &mut Self::State);
+    fn apply(
+        &self,
+        start_idx: Idx,
+        event: &[Self::Event],
+        queue: &mut PQueue<Self::T>,
+        state: &mut Self::State,
+    );
 
     type W: Width;
 
@@ -18,22 +24,18 @@ impl Width for u64 {}
 
 pub type Idx = u64;
 
-pub trait WithIndex {
-    fn index(&self) -> Idx;
-}
-
 #[derive(Debug, Clone)]
 pub enum PatternResult<T: Sized>
-    where
-        T: Clone,
+where
+    T: Clone,
 {
     Failure,
     Success(T), //todo make result fixed size
 }
 
 impl<T> PartialEq for PatternResult<T>
-    where
-        T: PartialEq + Clone,
+where
+    T: PartialEq + Clone,
 {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -87,18 +89,21 @@ impl<T: Clone> PQueue<T> {
         self.queue.pop_front();
         self
     }
-    //  fn behead_option(&mut self)-> Option<&PQueue<T>>{
-    //      self.queue.pop_front().map(|| self)
-    //  }
-    pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item=IdxValue<T>>) -> &mut Self {
+    #[allow(dead_code)]
+    pub(crate) fn enqueue(&mut self, idx_values: impl Iterator<Item = IdxValue<T>>) -> &mut Self {
         self.queue.extend(idx_values);
+        self
+    }
+
+    pub(crate) fn enqueue_one(&mut self, idx_value: IdxValue<T>) -> &mut Self {
+        self.queue.push_back(idx_value);
         self
     }
 
     // tries to join this element with the last item in queue. Implemented only for T:PartialEq
     pub(crate) fn enqueue_joined(&mut self, idx_value: IdxValue<T>) -> &mut Self
-        where
-            T: PartialEq,
+    where
+        T: PartialEq,
     {
         match self.queue.back_mut() {
             Some(last) if last.result == idx_value.result => last.end = idx_value.end,
