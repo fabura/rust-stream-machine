@@ -1,25 +1,42 @@
+use crate::tsp::partitioners::*;
 use crate::tsp::patterns::*;
 use crate::tsp::projections::*;
 
-pub struct SimpleMachineMapper<Proj, Pat>
+pub struct SimpleMachineMapper<Proj, Pat, Part>
 where
     Proj: Projection,
     Pat: Pattern,
+    Part: Partitioner,
 {
     projection: Proj,
     rule: Pat,
+    _partitioner: Part,
 }
 
-impl<Proj, Pat> SimpleMachineMapper<Proj, Pat>
+impl<Proj, Pat> SimpleMachineMapper<Proj, Pat, NoPartitioner<Proj::Event>>
 where
     Proj: Projection,
     Pat: Pattern<Event = Proj::Event>,
 {
-    pub fn new(projection: Proj, rule: Pat) -> SimpleMachineMapper<Proj, Pat> {
-        SimpleMachineMapper { projection, rule }
+    pub fn new(
+        projection: Proj,
+        rule: Pat,
+    ) -> SimpleMachineMapper<Proj, Pat, NoPartitioner<Proj::Event>> {
+        SimpleMachineMapper {
+            projection,
+            rule,
+            _partitioner: NoPartitioner::new(), /*, partitioner */
+        }
     }
+}
 
-    pub fn run<J>(&self, events_iter: J, chunks_size: usize) -> TSPIter<Proj, Pat, J>
+impl<Proj, Pat, Part> SimpleMachineMapper<Proj, Pat, Part>
+where
+    Proj: Projection,
+    Pat: Pattern<Event = Proj::Event>,
+    Part: Partitioner<Event = Proj::Event>,
+{
+    pub fn run<J>(&self, events_iter: J, chunks_size: usize) -> TSPIter<Proj, Pat, Part, J>
     where
         J: Iterator<Item = Proj::Event>,
     {
@@ -27,13 +44,14 @@ where
     }
 }
 
-pub struct TSPIter<'a, Proj, Pat, J>
+pub struct TSPIter<'a, Proj, Pat, Part, J>
 where
     J: Iterator<Item = Proj::Event>,
     Proj: Projection,
     Pat: Pattern<Event = Proj::Event>,
+    Part: Partitioner<Event = Proj::Event>,
 {
-    mapper: &'a SimpleMachineMapper<Proj, Pat>,
+    mapper: &'a SimpleMachineMapper<Proj, Pat, Part>,
     chunker: Chunker<J>,
     //todo Maybe need to add something more complicated here
     results_queue: PQueue<Pat::T>,
@@ -41,16 +59,17 @@ where
     state: Pat::State,
 }
 
-impl<Proj, Pat, J> TSPIter<'_, Proj, Pat, J>
+impl<Proj, Pat, Part, J> TSPIter<'_, Proj, Pat, Part, J>
 where
     J: Iterator<Item = Proj::Event>,
     Proj: Projection,
     Pat: Pattern<Event = Proj::Event>,
+    Part: Partitioner<Event = Proj::Event>,
 {
     pub fn new(
-        mapper: &SimpleMachineMapper<Proj, Pat>,
+        mapper: &SimpleMachineMapper<Proj, Pat, Part>,
         chunker: Chunker<J>,
-    ) -> TSPIter<Proj, Pat, J> {
+    ) -> TSPIter<Proj, Pat, Part, J> {
         TSPIter {
             mapper,
             chunker,
@@ -61,11 +80,12 @@ where
     }
 }
 
-impl<Proj, Pat, J> Iterator for TSPIter<'_, Proj, Pat, J>
+impl<Proj, Pat, Part, J> Iterator for TSPIter<'_, Proj, Pat, Part, J>
 where
     Proj: Projection,
     Pat: Pattern<Event = Proj::Event>,
     J: Iterator<Item = Proj::Event>,
+    Part: Partitioner<Event = Proj::Event>,
 {
     type Item = Proj::T;
 

@@ -33,6 +33,6 @@ TODO:
     - [ ] CSV
     - [ ] Arrow
     - [ ] Json
-    - [ ] Read from input stream
+    - [ ] Read from INPUT stream
     - [ ] Kafka
     
