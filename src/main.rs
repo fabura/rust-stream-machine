@@ -2,8 +2,11 @@
 
 extern crate time;
 
+use crate::tsp::partitioners::partitioner::FunctionPartitioner;
+use crate::tsp::partitioners::*;
 use crate::tsp::patterns::*;
 use crate::tsp::projections::*;
+
 // use crate::tsp::query::*;
 
 mod tsp;
@@ -40,7 +43,11 @@ fn main() {
     let _and_then = AndThenPattern::new(assert.clone(), window);
 
     let projection = FirstProjection::new(|e: &&TestEvent| e.value);
-    let state_machine = tsp::query::SimpleMachineMapper::new(projection, function.clone());
+    let state_machine = tsp::query::SimpleMachineMapper::new(
+        projection,
+        function.clone(),
+        FunctionPartitioner::new(|e: &TestEvent| e.idx),
+    );
     // tsp::tsp::SimpleMachineMapper::new(constant_pattern);
 
     let iter = state_machine.run(ints.iter(), 10);
@@ -49,5 +56,4 @@ fn main() {
             println!("{:?}", x)
         }
     }
-    //     run_rule();
 }

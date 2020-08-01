@@ -5,20 +5,30 @@ use crate::tsp::partitioners::Partitioner;
 /// Contains partitioning key K and &Vec[E] with elements
 #[derive(PartialEq, Debug)]
 pub struct Chunk<K, E> {
-    key: K,
-    elements: Vec<E>,
+    pub key: K,
+    pub elements: Vec<E>,
 }
 
-trait PartitionIterTool: Iterator + Sized {
-    fn partition_by<P>(self, partitioner: P, chunk_max_size: usize, total_size_limit: usize) -> PartitionIterator<Self, P>
-        where
-            P: Partitioner<Event=Self::Item>;
+pub(crate) trait PartitionIterTool: Iterator + Sized {
+    fn partition_by<P>(
+        self,
+        partitioner: &P,
+        chunk_max_size: usize,
+        total_size_limit: usize,
+    ) -> PartitionIterator<Self, P>
+    where
+        P: Partitioner<Event = Self::Item>;
 }
 
 impl<T: Iterator> PartitionIterTool for T {
-    fn partition_by<P>(self, partitioner: P, chunk_max_size: usize, total_size_limit: usize) -> PartitionIterator<Self, P>
-        where
-            P: Partitioner<Event=Self::Item>,
+    fn partition_by<P>(
+        self,
+        partitioner: &P,
+        chunk_max_size: usize,
+        total_size_limit: usize,
+    ) -> PartitionIterator<Self, P>
+    where
+        P: Partitioner<Event = Self::Item>,
     {
         assert!(chunk_max_size > 0);
         assert!(total_size_limit > 0);
@@ -33,23 +43,23 @@ impl<T: Iterator> PartitionIterTool for T {
     }
 }
 
-pub struct PartitionIterator<J, Part>
-    where
-        J: Iterator,
-        Part: Partitioner<Event=J::Item>,
+pub struct PartitionIterator<'a, J, Part>
+where
+    J: Iterator,
+    Part: Partitioner<Event = J::Item>,
 {
     iter: J,
-    partitioner: Part,
+    partitioner: &'a Part,
     chunk_max_size: usize,
     map: std::collections::HashMap<Part::T, Vec<J::Item>>,
     total_size: usize,
     total_size_limit: usize,
 }
 
-impl<J, Part> Iterator for PartitionIterator<J, Part>
-    where
-        J: Iterator,
-        Part: Partitioner<Event=J::Item>,
+impl<J, Part> Iterator for PartitionIterator<'_, J, Part>
+where
+    J: Iterator,
+    Part: Partitioner<Event = J::Item>,
 {
     type Item = Chunk<Part::T, J::Item>;
 
@@ -68,22 +78,31 @@ impl<J, Part> Iterator for PartitionIterator<J, Part>
             if chunk.len() >= self.chunk_max_size {
                 let elements = self.map.remove(&key_clone).expect("Illegal state");
                 self.total_size -= elements.len();
-                return Some(Chunk { key: key_clone, elements });
+                return Some(Chunk {
+                    key: key_clone,
+                    elements,
+                });
             }
 
             // if we overcome the limit, then return first value.
             if self.total_size >= self.total_size_limit {
-                let key = self.map.keys().take(1).next().expect("Illegal state").clone();
+                let (key, _) = self.map.iter().next().expect("Illegal state");
+                let key = key.clone();
                 let (key, elements) = self.map.remove_entry(&key).expect("Illegal state");
                 self.total_size -= elements.len();
                 return Some(Chunk { key, elements });
             }
         }
 
-
         // if there is not more elements in inner iterator, we start emitting all keys.
         if !self.map.is_empty() {
-            let key = self.map.keys().take(1).next().expect("Illegal state").clone();
+            let key = self
+                .map
+                .keys()
+                .take(1)
+                .next()
+                .expect("Illegal state")
+                .clone();
             let (key, elements) = self.map.remove_entry(&key).expect("Illegal state");
             self.total_size -= elements.len();
             return Some(Chunk { key, elements });
@@ -99,8 +118,8 @@ impl<J, Part> Iterator for PartitionIterator<J, Part>
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::partitioner::*;
+    use super::*;
 
     #[derive(Debug, PartialEq)]
     struct TestEvent {
@@ -110,15 +129,24 @@ mod tests {
 
     impl TestEvent {
         pub fn new(partition_key: usize, value: usize) -> Self {
-            TestEvent { partition_key, value }
+            TestEvent {
+                partition_key,
+                value,
+            }
         }
     }
-
 
     #[test]
     fn works_for_empty_iterator() {
         let empty: Vec<TestEvent> = vec![];
-        assert_eq!(empty.iter().partition_by(NoPartitioner::<&TestEvent>::new(), 1, 1).into_iter().next(), None)
+        assert_eq!(
+            empty
+                .iter()
+                .partition_by(&NoPartitioner::<&TestEvent>::new(), 1, 1)
+                .into_iter()
+                .next(),
+            None
+        )
     }
 
     #[test]
@@ -132,21 +160,48 @@ mod tests {
             TestEvent::new(0, 6),
         ];
 
-        let mut iterator = input.iter().partition_by(NoPartitioner::new(), 2, 100).into_iter();
-        assert_eq!(iterator.next(), Some(Chunk { key: (), elements: vec![&TestEvent::new(0, 1), &TestEvent::new(0, 2)] }));
-        assert_eq!(iterator.next(), Some(Chunk { key: (), elements: vec![&TestEvent::new(0, 3), &TestEvent::new(0, 4)] }));
-        assert_eq!(iterator.next(), Some(Chunk { key: (), elements: vec![&TestEvent::new(0, 5), &TestEvent::new(0, 6)] }));
+        let partitioner = NoPartitioner::new();
+        let mut iterator = input.iter().partition_by(&partitioner, 2, 100).into_iter();
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: (),
+                elements: vec![&TestEvent::new(0, 1), &TestEvent::new(0, 2)],
+            })
+        );
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: (),
+                elements: vec![&TestEvent::new(0, 3), &TestEvent::new(0, 4)],
+            })
+        );
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: (),
+                elements: vec![&TestEvent::new(0, 5), &TestEvent::new(0, 6)],
+            })
+        );
         assert_eq!(iterator.next(), None);
     }
 
     #[test]
     fn returns_non_completed_chunks() {
-        let input = vec![
-            TestEvent::new(0, 1),
-        ];
+        let input = vec![TestEvent::new(0, 1)];
 
-        let mut iterator = input.iter().partition_by(NoPartitioner::new(), 100, 100).into_iter();
-        assert_eq!(iterator.next(), Some(Chunk { key: (), elements: vec![&TestEvent::new(0, 1)] }));
+        let partitioner = NoPartitioner::new();
+        let mut iterator = input
+            .iter()
+            .partition_by(&partitioner, 100, 100)
+            .into_iter();
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: (),
+                elements: vec![&TestEvent::new(0, 1)],
+            })
+        );
         assert_eq!(iterator.next(), None);
     }
 
@@ -161,10 +216,29 @@ mod tests {
             TestEvent::new(0, 6),
         ];
 
-        let mut iterator = input.iter().partition_by(NoPartitioner::new(), 100, 2).into_iter();
-        assert_eq!(iterator.next(), Some(Chunk { key: (), elements: vec![&TestEvent::new(0, 1), &TestEvent::new(0, 2)] }));
-        assert_eq!(iterator.next(), Some(Chunk { key: (), elements: vec![&TestEvent::new(0, 3), &TestEvent::new(0, 4)] }));
-        assert_eq!(iterator.next(), Some(Chunk { key: (), elements: vec![&TestEvent::new(0, 5), &TestEvent::new(0, 6)] }));
+        let partitioner = NoPartitioner::new();
+        let mut iterator = input.iter().partition_by(&partitioner, 100, 2).into_iter();
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: (),
+                elements: vec![&TestEvent::new(0, 1), &TestEvent::new(0, 2)],
+            })
+        );
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: (),
+                elements: vec![&TestEvent::new(0, 3), &TestEvent::new(0, 4)],
+            })
+        );
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: (),
+                elements: vec![&TestEvent::new(0, 5), &TestEvent::new(0, 6)],
+            })
+        );
         assert_eq!(iterator.next(), None);
     }
 
@@ -182,9 +256,22 @@ mod tests {
             t.partition_key
         }
 
-        let mut iterator = input.iter().partition_by(FunctionPartitioner::new(partition_fn), 2, 100).into_iter();
-        assert_eq!(iterator.next(), Some(Chunk { key: 0, elements: vec![&TestEvent::new(0, 1), &TestEvent::new(0, 3)] }));
-        assert_eq!(iterator.next(), Some(Chunk { key: 1, elements: vec![&TestEvent::new(1, 2), &TestEvent::new(1, 4)] }));
+        let partitioner = FunctionPartitioner::new(partition_fn);
+        let mut iterator = input.iter().partition_by(&partitioner, 2, 100).into_iter();
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: 0,
+                elements: vec![&TestEvent::new(0, 1), &TestEvent::new(0, 3)],
+            })
+        );
+        assert_eq!(
+            iterator.next(),
+            Some(Chunk {
+                key: 1,
+                elements: vec![&TestEvent::new(1, 2), &TestEvent::new(1, 4)],
+            })
+        );
         let chunk = iterator.next().expect("");
         assert_eq!(chunk.elements.len(), 1);
         let chunk = iterator.next().expect("");
@@ -206,7 +293,8 @@ mod tests {
             t.partition_key
         }
 
-        let mut iterator = input.iter().partition_by(FunctionPartitioner::new(partition_fn), 2, 1).into_iter();
+        let partitioner = FunctionPartitioner::new(partition_fn);
+        let mut iterator = input.iter().partition_by(&partitioner, 2, 1).into_iter();
         assert!(iterator.next().is_some());
         assert!(iterator.next().is_some());
         assert!(iterator.next().is_some());

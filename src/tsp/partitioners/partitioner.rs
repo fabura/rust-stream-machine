@@ -1,9 +1,10 @@
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
 pub trait Partitioner {
     type Event;
-    type T: Clone + Eq + Hash;
+    type T: Debug + Clone + Eq + Hash;
 
     fn partition_key(&self, event: &Self::Event) -> Self::T;
 }
@@ -19,22 +20,25 @@ impl<E> NoPartitioner<E> {
     }
 }
 
-// todo: Can we avoid Box here?
-type BoxedFn<'a, E, T> = Box<dyn Fn(&'a E) -> T>;
-
-pub struct FunctionPartitioner<'a, E, T> where T: Clone + Eq + Hash {
-    func: BoxedFn<'a, E, T>,
+pub struct FunctionPartitioner<'a, E, T, F>
+where
+    F: Fn(&'a E) -> T,
+    T: Clone + Eq + Hash,
+{
+    func: F,
+    ph: PhantomData<(&'a E, T)>,
 }
 
-impl<'a, E, T> FunctionPartitioner<'a, E, T> where T: Clone + Eq + Hash {
-    pub fn new<F>(func: F) -> Self where F: Fn(&E) -> T + 'static {
-        FunctionPartitioner { func: Box::new(func) }
-    }
-}
-
-impl<'a, F, E, T> From<F> for FunctionPartitioner<'a, E, T> where F: Fn(&E) -> T + 'static, T: Clone + Eq + Hash {
-    fn from(f: F) -> Self {
-        FunctionPartitioner::new(f)
+impl<'a, E, T, F> FunctionPartitioner<'a, E, T, F>
+where
+    F: Fn(&'a E) -> T,
+    T: Clone + Eq + Hash,
+{
+    pub fn new(func: F) -> Self {
+        FunctionPartitioner {
+            func,
+            ph: PhantomData,
+        }
     }
 }
 
@@ -45,7 +49,11 @@ impl<E> Partitioner for NoPartitioner<E> {
     fn partition_key(&self, _event: &Self::Event) -> Self::T {}
 }
 
-impl<'a, E, T> Partitioner for FunctionPartitioner<'a, E, T> where T: Clone + Eq + Hash {
+impl<'a, E, T, F> Partitioner for FunctionPartitioner<'a, E, T, F>
+where
+    F: Fn(&'a E) -> T,
+    T: Debug + Clone + Eq + Hash,
+{
     type Event = &'a E;
     type T = T;
 

@@ -5,13 +5,13 @@ TODO:
 - [x] StateMachine
 - [ ] Projections
     - [x] Constant
-    - [ ] Function
+    - [x] Function
     - [ ] First
     - [ ] Last
     - [ ] Sum
     - [ ] Avg
     - [ ] Min, Max
-- [ ] Partitioning
+- [x] Partitioning
 - [ ] Patterns
     -  [x] ConstantPattern
     -  [x] FunctionPattern

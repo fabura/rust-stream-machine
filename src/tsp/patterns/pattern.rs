@@ -74,8 +74,8 @@ impl<T: Clone> Default for PQueue<T> {
 
 impl<T: Clone> PQueue<T> {
     #[allow(dead_code)]
-    pub(crate) fn size(&self) -> usize {
-        self.queue.len()
+    pub(crate) fn is_empty(&self) -> bool {
+        self.queue.is_empty()
     }
 
     pub(crate) fn head_option(&self) -> Option<&IdxValue<T>> {
