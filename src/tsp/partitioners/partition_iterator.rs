@@ -95,20 +95,11 @@ where
         }
 
         // if there is not more elements in inner iterator, we start emitting all keys.
-        if !self.map.is_empty() {
-            let key = self
-                .map
-                .keys()
-                .take(1)
-                .next()
-                .expect("Illegal state")
-                .clone();
-            let (key, elements) = self.map.remove_entry(&key).expect("Illegal state");
-            self.total_size -= elements.len();
-            return Some(Chunk { key, elements });
-        }
-
-        None
+        let (key, elements) = self
+            .map
+            .remove_entry(&self.map.keys().take(1).next()?.clone())?;
+        self.total_size -= elements.len();
+        Some(Chunk { key, elements })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
