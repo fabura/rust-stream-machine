@@ -21,7 +21,7 @@ pub trait Projection {
 
 pub struct ConstantProjection<E, T>(T, PhantomData<E>);
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 pub struct NoProjectionState;
 
 impl<E, T: Clone> ConstantProjection<E, T> {
@@ -43,7 +43,7 @@ impl<Event, T: Clone> Projection for ConstantProjection<Event, T> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct QueueProjectionState<T> {
     queue: VecDeque<T>,
     first_idx: Idx,
@@ -80,10 +80,55 @@ impl<E, F: Fn(&E) -> T, T: Clone> Projection for FirstProjection<E, F, T> {
             .append(&mut events.iter().map(|x| self.0(x)).collect())
     }
 
-    fn extract(&self, state: &mut Self::State, start: u64, _end: u64) -> Self::T {
-        assert!(state.queue.len() > (start - state.first_idx) as usize);
+    fn extract(&self, state: &mut Self::State, start: u64, end: u64) -> Self::T {
+        assert!(state.queue.len() > (end - state.first_idx) as usize);
+        assert!(start <= end);
+        assert!(state.first_idx <= start);
         state.queue.drain(..(start - state.first_idx) as usize);
-        state.first_idx = start;
-        state.queue.front().unwrap().clone()
+        let res = state.queue.front().unwrap().clone();
+        state.queue.drain(..(end - start + 1) as usize);
+        state.first_idx = end + 1;
+        res
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn run_projection<P: Projection>(p: &P, events: &[P::Event]) -> <P as Projection>::State {
+        let mut state = default_state(p);
+        p.update(0, events, &mut state);
+        state
+    }
+
+    fn default_state<P: Projection>(p: &P) -> <P as Projection>::State {
+        P::State::default()
+    }
+
+    #[test]
+    fn const_projection() {
+        let expected = 3;
+        let constant_projection = ConstantProjection::new(expected);
+        let mut updated_state = run_projection(&constant_projection, &[(0, 0), (1, 1)]);
+
+        let extracted_value = constant_projection.extract(&mut updated_state, 0, 1);
+        assert_eq!(extracted_value, expected);
+        assert_eq!(updated_state, NoProjectionState);
+    }
+
+    struct TE(usize, usize);
+
+    #[test]
+    fn first_projection() {
+        let expected = 13;
+        let first_projection = FirstProjection::new(|e: &TE| e.1);
+        let mut updated_state =
+            run_projection(&first_projection, &[TE(0, 20), TE(1, 13), TE(5, 34)]);
+
+        let extracted_value = first_projection.extract(&mut updated_state, 1, 2);
+        assert_eq!(extracted_value, expected);
+        assert_eq!(updated_state.first_idx, 3);
+        assert!(updated_state.queue.is_empty());
     }
 }
