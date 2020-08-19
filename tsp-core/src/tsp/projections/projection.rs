@@ -43,6 +43,38 @@ impl<Event, T: Clone> Projection for ConstantProjection<Event, T> {
     }
 }
 
+macro_rules! queue_projection {
+    ( $name:ident, $extract:expr) => {
+        pub struct $name<E, F: Fn(&E) -> T, T>(F, PhantomData<E>, PhantomData<T>);
+        impl<E, F, T> $name<E, F, T>
+        where
+            F: Fn(&E) -> T,
+        {
+            pub fn new(field0: F) -> Self {
+                $name(field0, PhantomData, PhantomData)
+            }
+        }
+        impl<E, F: Fn(&E) -> T, T: Clone> Projection for $name<E, F, T> {
+            type Event = E;
+            type State = QueueProjectionState<T>;
+            type T = T;
+
+            fn update(&self, _start_idx: Idx, events: &[Self::Event], state: &mut Self::State) {
+                state
+                    .queue
+                    .append(&mut events.iter().map(|x| self.0(x)).collect())
+            }
+
+            fn extract(&self, state: &mut Self::State, start: u64, end: u64) -> Self::T {
+                assert!(state.queue.len() > (end - state.first_idx) as usize);
+                assert!(start <= end);
+                assert!(state.first_idx <= start);
+                $extract(state, start, end)
+            }
+        }
+    };
+}
+
 #[derive(Debug, PartialEq)]
 pub struct QueueProjectionState<T> {
     queue: VecDeque<T>,
@@ -58,39 +90,25 @@ impl<T> Default for QueueProjectionState<T> {
     }
 }
 
-pub struct FirstProjection<E, F: Fn(&E) -> T, T>(F, PhantomData<E>, PhantomData<T>);
-
-impl<E, F, T> FirstProjection<E, F, T>
-where
-    F: Fn(&E) -> T,
-{
-    pub fn new(field0: F) -> Self {
-        FirstProjection(field0, PhantomData, PhantomData)
-    }
+fn first<T: Clone>(state: &mut QueueProjectionState<T>, start: u64, end: u64) -> T {
+    state.queue.drain(..(start - state.first_idx) as usize);
+    let res = state.queue.front().unwrap().clone();
+    state.queue.drain(..(end - start + 1) as usize);
+    state.first_idx = end + 1;
+    res
 }
 
-impl<E, F: Fn(&E) -> T, T: Clone> Projection for FirstProjection<E, F, T> {
-    type Event = E;
-    type State = QueueProjectionState<T>;
-    type T = T;
+queue_projection!(FirstProjection, first);
 
-    fn update(&self, _start_idx: Idx, events: &[Self::Event], state: &mut Self::State) {
-        state
-            .queue
-            .append(&mut events.iter().map(|x| self.0(x)).collect())
-    }
-
-    fn extract(&self, state: &mut Self::State, start: u64, end: u64) -> Self::T {
-        assert!(state.queue.len() > (end - state.first_idx) as usize);
-        assert!(start <= end);
-        assert!(state.first_idx <= start);
-        state.queue.drain(..(start - state.first_idx) as usize);
-        let res = state.queue.front().unwrap().clone();
-        state.queue.drain(..(end - start + 1) as usize);
-        state.first_idx = end + 1;
-        res
-    }
+fn last<T: Clone>(state: &mut QueueProjectionState<T>, start: u64, end: u64) -> T {
+    let res = state.queue.get((end - state.first_idx) as usize).unwrap().clone();
+    state.queue.drain(..(end - state.first_idx + 1) as usize);
+    state.first_idx = end + 1;
+    res
 }
+
+queue_projection!(LastProjection, last);
+
 
 #[cfg(test)]
 mod tests {
@@ -130,5 +148,19 @@ mod tests {
         assert_eq!(extracted_value, expected);
         assert_eq!(updated_state.first_idx, 3);
         assert!(updated_state.queue.is_empty());
+    }
+
+
+    #[test]
+    fn last_projection() {
+        let expected = 34;
+        let last_projection = LastProjection::new(|e: &TE| e.1);
+        let mut updated_state =
+            run_projection(&last_projection, &[TE(0, 20), TE(1, 13), TE(2, 34), TE(3, 567)]);
+
+        let extracted_value = last_projection.extract(&mut updated_state, 1, 2);
+        assert_eq!(extracted_value, expected);
+        assert_eq!(updated_state.first_idx, 3);
+        assert_eq!(updated_state.queue.len(), 1);
     }
 }
