@@ -1,0 +1,10 @@
+[package]
+name = "rust-stream-machine"
+version = "0.1.0"
+authors = ["Bulat Fattahov <fabura@yandex.ru>"]
+edition = "2018"
+
+[dependencies]
+lazy_static = "1.4.0"
+time = "0.1"
+itertools = "0.9"
